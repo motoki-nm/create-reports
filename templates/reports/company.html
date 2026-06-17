@@ -1,0 +1,52 @@
+{% extends "reports/base.html" %}
+{% block title %}業務日報 - 日報管理{% endblock %}
+{% block nav_company %}active{% endblock %}
+
+{% block content %}
+<h1>業務日報（自動集計）</h1>
+
+{% if report_data %}
+  {% for day in report_data %}
+  <div class="card">
+    <h2>{{ day.date }}</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ドライバー</th>
+          <th class="text-right">件数</th>
+          <th class="text-right">処分</th>
+          <th class="text-right">買取</th>
+          <th class="text-right">見積</th>
+          <th class="text-right">その他</th>
+          <th class="text-right">売上合計</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in day.drivers %}
+        <tr>
+          <td>{{ d.driver_name }}</td>
+          <td class="text-right">{{ d.total_count }} 件</td>
+          <td class="text-right">{{ d.disposal }}</td>
+          <td class="text-right">{{ d.purchase }}</td>
+          <td class="text-right">{{ d.estimate }}</td>
+          <td class="text-right">{{ d.other }}</td>
+          <td class="text-right"><strong>{{ d.total_amount|floatformat:0 }} 円</strong></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="background:#f0f3f7;">
+          <td colspan="6"><strong>日計</strong></td>
+          <td class="text-right"><strong>{{ day.day_total|floatformat:0 }} 円</strong></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="card">
+    <p style="color:#888;">まだ記録がありません。</p>
+  </div>
+{% endif %}
+{% endblock %}
