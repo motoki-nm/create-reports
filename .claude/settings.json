@@ -1,4 +1,27 @@
 {
+  "permissions": {
+    "allow": [
+      "Edit",
+      "Write",
+      "Read",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push origin dev)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf*)",
+      "Bash(rm *)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -f*)",
+      "Bash(git branch -D*)",
+      "Bash(sudo*)"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {
@@ -9,6 +32,18 @@
             "command": "branch=$(git branch --show-current 2>/dev/null); if [ \"$branch\" = \"dev\" ]; then git add -A; changed=$(git diff --cached --name-only | head -5 | tr '\\n' ' '); if [ -n \"$(git diff --cached --name-only)\" ]; then git commit -m \"auto: edit ${changed}\"; fi; fi",
             "timeout": 30,
             "statusMessage": "devブランチに自動コミット中..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "branch=$(git branch --show-current 2>/dev/null); if [ \"$branch\" = \"dev\" ]; then git push origin dev 2>/dev/null || true; fi",
+            "timeout": 30,
+            "statusMessage": "devブランチをGitHubにpush中..."
           }
         ]
       }
