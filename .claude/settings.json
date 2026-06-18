@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "branch=$(git branch --show-current 2>/dev/null); if [ \"$branch\" = \"dev\" ]; then git add -A; changed=$(git diff --cached --name-only | head -5 | tr '\\n' ' '); if [ -n \"$(git diff --cached --name-only)\" ]; then git commit -m \"auto: edit ${changed}\"; fi; fi",
+            "timeout": 30,
+            "statusMessage": "devブランチに自動コミット中..."
+          }
+        ]
+      }
+    ]
+  }
+}
