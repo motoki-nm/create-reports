@@ -31,18 +31,26 @@ def index(request):
 
 def record_list(request):
     """過去の作業記録一覧を表示する（日付・ドライバーで絞り込み可）。"""
-    filter_form = FilterForm(request.GET)
+    filter_form = FilterForm(request.GET or None)
     records = WorkRecord.objects.all()
+    is_filtered = False
 
-    if filter_form.is_valid():
+    if filter_form is not None and filter_form.is_valid():
         if filter_form.cleaned_data.get("date"):
             records = records.filter(date=filter_form.cleaned_data["date"])
+            is_filtered = True
         if filter_form.cleaned_data.get("driver_name"):
             records = records.filter(driver_name=filter_form.cleaned_data["driver_name"])
+            is_filtered = True
+
+    if filter_form is None:
+        filter_form = FilterForm()
 
     return render(request, "reports/list.html", {
         "records": records,
         "filter_form": filter_form,
+        "is_filtered": is_filtered,
+        "total_count": WorkRecord.objects.count(),
     })
 
 
