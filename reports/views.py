@@ -129,28 +129,37 @@ def company_report(request):
 
         day_total = records.aggregate(total=Sum("amount"))["total"] or 0
 
-        def _get(lst: list, i: int):
-            return lst[i] if i < len(lst) else None
+        def _get(i: int):
+            return drivers[i] if i < len(drivers) else None
 
-        # 上段 10行: 左=ドライバー金額, 右=同ドライバーの仕事件数+終業時間
-        upper_rows = [
-            {"left": _get(drivers, i), "right": _get(drivers, i)}
-            for i in range(10)
-        ]
-        # 下段 6行: 左=11人目以降の金額, 右2列=11人目以降の勤務時間
-        lower_rows = [
+        # 上段: 5スロット×2行 (Excel行5〜14)
+        # 左=ドライバー[0-4], 右D列=スタッフ[0,2,4,6,8]/[1,3,5,7,9]
+        upper_slots = [
             {
-                "left": _get(drivers, 10 + i),
-                "r1": _get(drivers, 10 + i),
-                "r2": _get(drivers, 16 + i),
+                "driver": _get(i),
+                "r1": _get(i * 2),
+                "r2": _get(i * 2 + 1),
             }
-            for i in range(6)
+            for i in range(5)
+        ]
+
+        # 下段: 3スロット×2行 (Excel行15〜20)
+        # 左=ドライバー[5-7], 右=D/E列+F/G列 それぞれ2行分
+        lower_slots = [
+            {
+                "driver": _get(5 + i),
+                "r1_c1": _get(10 + i * 4),
+                "r1_c2": _get(10 + i * 4 + 1),
+                "r2_c1": _get(10 + i * 4 + 2),
+                "r2_c2": _get(10 + i * 4 + 3),
+            }
+            for i in range(3)
         ]
 
         report_data.append({
             "date": d,
-            "upper_rows": upper_rows,
-            "lower_rows": lower_rows,
+            "upper_slots": upper_slots,
+            "lower_slots": lower_slots,
             "day_total": day_total,
         })
 
