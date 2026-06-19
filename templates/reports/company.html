@@ -100,9 +100,9 @@
     <!-- ===== 下段: 3スロット × 2行 (Excel行15〜20) ===== -->
     <!-- D/E/Fが個別列、G〜M colspan=7 -->
     {% for slot in day.lower_slots %}
-    <!-- 下段: 奇数行 (15,17,19) -->
+    <!-- 下段: 奇数行 (15,17,19) / 最終スロットのA列は太線(s8) -->
     <tr style="height:25px">
-      <td class="s3 la" rowspan="2">{{ slot.driver.name|default:"" }}</td>
+      <td class="{% if forloop.last %}s8{% else %}s3{% endif %} la" rowspan="2">{{ slot.driver.name|default:"" }}</td>
       <td class="s4">{% if slot.driver %}¥{% endif %}</td>
       <td class="s5">{% if slot.driver %}{{ slot.driver.total|floatformat:0 }}{% endif %}</td>
       <td class="s3">{{ slot.r1_c1.name|default:"" }}</td>
