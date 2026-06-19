@@ -3,44 +3,136 @@
 {% block nav_company %}active{% endblock %}
 
 {% block content %}
-<h1>業務日報（自動集計）</h1>
+<style>
+  /* ページ幅を広げて表が見やすいよう調整 */
+  main { max-width: 1100px !important; }
+
+  .report-block { margin-bottom: 40px; }
+
+  .report-date-header {
+    font-size: 17px;
+    font-weight: bold;
+    color: #2c3e50;
+    padding: 6px 0 8px;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #2c3e50;
+    letter-spacing: 0.05em;
+  }
+
+  /* Excelライクなテーブルリセット */
+  .ct {
+    border-collapse: collapse;
+    border: 2px solid #2c3e50;
+    font-size: 13px;
+    table-layout: fixed;
+    width: auto;
+    min-width: 680px;
+  }
+  .ct td {
+    border: 1px solid #aab;
+    padding: 2px 7px;
+    height: 25px;
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+  }
+  /* 基底のhoverを打ち消す */
+  .ct tr:hover td { background: #fff; }
+
+  /* 列幅 */
+  .ct .c-name  { width: 100px; }
+  .ct .c-yen   { width: 18px; text-align: center; }
+  .ct .c-amt   { width: 90px; text-align: right; border-right: 2px solid #2c3e50; }
+  .ct .c-sname { width: 90px; border-left: 2px solid #2c3e50; }
+  .ct .c-det   { width: 155px; font-size: 12px; }
+  .ct .c-s2    { width: 90px; border-left: 2px solid #2c3e50; }
+  .ct .c-det2  { width: 100px; font-size: 12px; text-align: center; }
+  .ct .c-et    { width: 72px; text-align: center; font-size: 12px; }
+
+  /* 上段と下段の境界 */
+  .ct tr.sec-lower td { border-top: 2px solid #2c3e50; }
+
+  /* 集計行との境界 */
+  .ct tr.sec-summary td { border-top: 2px solid #2c3e50; }
+
+  /* 集計ラベル */
+  .ct .lbl { font-weight: bold; }
+
+  /* 合計行の下 */
+  .ct tr.row-total td { border-bottom: 2px solid #2c3e50; }
+</style>
+
+<h1>業務日報</h1>
 
 {% if report_data %}
   {% for day in report_data %}
-  <div class="card">
-    <h2>{{ day.date }}</h2>
+  <div class="report-block">
+    <div class="report-date-header">{{ day.date }}</div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>ドライバー</th>
-          <th class="text-right">件数</th>
-          <th class="text-right">処分</th>
-          <th class="text-right">買取</th>
-          <th class="text-right">見積</th>
-          <th class="text-right">その他</th>
-          <th class="text-right">売上合計</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for d in day.drivers %}
-        <tr>
-          <td>{{ d.driver_name }}</td>
-          <td class="text-right">{{ d.total_count }} 件</td>
-          <td class="text-right">{{ d.disposal }}</td>
-          <td class="text-right">{{ d.purchase }}</td>
-          <td class="text-right">{{ d.estimate }}</td>
-          <td class="text-right">{{ d.other }}</td>
-          <td class="text-right"><strong>{{ d.total_amount|floatformat:0 }} 円</strong></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-      <tfoot>
-        <tr style="background:#f0f3f7;">
-          <td colspan="6"><strong>日計</strong></td>
-          <td class="text-right"><strong>{{ day.day_total|floatformat:0 }} 円</strong></td>
-        </tr>
-      </tfoot>
+    <table class="ct">
+      <colgroup>
+        <col class="c-name">
+        <col class="c-yen">
+        <col class="c-amt">
+        <col class="c-sname">
+        <col class="c-det">
+        <col class="c-s2">
+        <col class="c-det2">
+      </colgroup>
+
+      <!-- ===== 上段：仕事件数 + 終業時間 ===== -->
+      {% for row in day.upper_rows %}
+      <tr>
+        <!-- 左：ドライバー名 + 集金額 -->
+        <td class="c-name">{{ row.left.name|default:"" }}</td>
+        <td class="c-yen">{% if row.left %}¥{% endif %}</td>
+        <td class="c-amt">{% if row.left %}{{ row.left.total|floatformat:0 }}{% endif %}</td>
+        <!-- 右：スタッフ名 + 仕事件数 + 終業時間 -->
+        <td class="c-sname">{{ row.right.name|default:"" }}</td>
+        <td class="c-det">{{ row.right.counts|default:"" }}</td>
+        <td class="c-s2"></td>
+        <td class="c-det2 c-et">{{ row.right.end_time|default:"" }}</td>
+      </tr>
+      {% endfor %}
+
+      <!-- ===== 下段：勤務時間（2列） ===== -->
+      {% for row in day.lower_rows %}
+      <tr{% if forloop.first %} class="sec-lower"{% endif %}>
+        <!-- 左：ドライバー名 + 集金額（続き） -->
+        <td class="c-name">{{ row.left.name|default:"" }}</td>
+        <td class="c-yen">{% if row.left %}¥{% endif %}</td>
+        <td class="c-amt">{% if row.left %}{{ row.left.total|floatformat:0 }}{% endif %}</td>
+        <!-- 右：2グループ各スタッフ名 + 勤務時間 -->
+        <td class="c-sname">{{ row.r1.name|default:"" }}</td>
+        <td class="c-det">{{ row.r1.work_hours|default:"" }}</td>
+        <td class="c-s2">{{ row.r2.name|default:"" }}</td>
+        <td class="c-det2">{{ row.r2.work_hours|default:"" }}</td>
+      </tr>
+      {% endfor %}
+
+      <!-- ===== 集計行 ===== -->
+      <tr class="sec-summary">
+        <td class="c-name lbl">売上</td>
+        <td class="c-yen lbl">¥</td>
+        <td class="c-amt lbl">{{ day.day_total|floatformat:0 }}</td>
+        <td class="c-sname lbl">処理場</td>
+        <td class="c-det"></td>
+        <td class="c-s2 lbl">その他</td>
+        <td class="c-det2"></td>
+      </tr>
+      <tr>
+        <td class="c-name lbl">廃材処理</td>
+        <td class="c-yen lbl">¥</td>
+        <td class="c-amt"></td>
+        <td class="c-sname" colspan="4"></td>
+      </tr>
+      <tr class="row-total">
+        <td class="c-name lbl">合計</td>
+        <td class="c-yen lbl">¥</td>
+        <td class="c-amt lbl">{{ day.day_total|floatformat:0 }}</td>
+        <td class="c-sname" colspan="4"></td>
+      </tr>
     </table>
   </div>
   {% endfor %}
