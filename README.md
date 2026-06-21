@@ -61,7 +61,7 @@ driver_summary = records.values("driver_name").annotate(
 
 ## 設計上の工夫・技術的判断
 
-面接でよく聞かれる「なぜこの設計にしたか」を残しておく。
+「なぜこの設計にしたか」
 
 ### `driver_name` を ForeignKey にしなかった理由
 過去の作業記録はドライバーが退職・削除されても履歴として残す必要がある。
