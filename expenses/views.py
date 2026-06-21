@@ -33,6 +33,7 @@ def expense_list(request):
         "form": form,
         "total": total,
         "date_filter": date_str,
+        "preset_sites": ProcessingSite.objects.all(),
     })
 
 
