@@ -1,6 +1,6 @@
 """日報アプリのビュー。"""
 import logging
-from datetime import date, datetime
+from datetime import date, datetime  # datetime は work_end ビューで使用
 
 from django.db.models import Count, Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
