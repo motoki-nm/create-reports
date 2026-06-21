@@ -105,26 +105,10 @@ def company_report(request):
                     count_parts.append(f"{jt}{cnt}件")
             counts_str = "・".join(count_parts)
 
-            times = [r.time for r in dr if r.time and "~" in r.time]
-            starts, ends = [], []
-            for t in times:
-                parts = t.split("~")
-                if len(parts) == 2:
-                    s, e = parts[0].strip(), parts[1].strip()
-                    if s:
-                        starts.append(s)
-                    if e:
-                        ends.append(e)
-
-            work_start = min(starts) if starts else ""
-            work_end = max(ends) if ends else ""
-            work_hours = f"{work_start} ~ {work_end}" if work_start else ""
-
-            # 業務終了ボタンで記録された終了時刻を優先して使う
+            # 業務終了ボタンで記録された時刻のみ使う
             log = DriverDailyLog.objects.filter(driver_name=name, date=d).first()
-            if log:
-                work_end = log.end_time.strftime("%H:%M")
-                work_hours = f"{work_start} ~ {work_end}" if work_start else f"~ {work_end}"
+            work_end = log.end_time.strftime("%H:%M") if log else ""
+            work_hours = work_end
 
             drivers.append({
                 "name": name,
