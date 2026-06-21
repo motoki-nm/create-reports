@@ -1,0 +1,60 @@
+{% extends "reports/base.html" %}
+{% block title %}処理場マスター{% endblock %}
+{% block nav_expenses %}active{% endblock %}
+
+{% block content %}
+<h1>処理場マスター管理</h1>
+
+<div class="card">
+  <h2>処理場を登録する</h2>
+  <form method="POST">
+    {% csrf_token %}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group">
+        <label>処理場名</label>
+        {{ form.name }}
+      </div>
+      <div class="form-group">
+        <label>備考（任意）</label>
+        {{ form.note }}
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">登録する</button>
+    <a href="{% url 'expenses:list' %}" class="btn btn-secondary" style="margin-left:8px;">← 経費一覧へ戻る</a>
+  </form>
+</div>
+
+<div class="card">
+  <h2>登録済み処理場 （{{ sites|length }}件）</h2>
+  {% if sites %}
+  <table>
+    <thead>
+      <tr>
+        <th>処理場名</th>
+        <th>備考</th>
+        <th>登録日</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for site in sites %}
+      <tr>
+        <td>{{ site.name }}</td>
+        <td>{{ site.note }}</td>
+        <td>{{ site.created_at|date:"Y/m/d" }}</td>
+        <td>
+          <form method="POST" action="{% url 'expenses:site_delete' site.pk %}"
+                onsubmit="return confirm('「{{ site.name }}」を削除しますか？')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm">削除</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:#888;text-align:center;padding:24px 0;">まだ処理場が登録されていません。</p>
+  {% endif %}
+</div>
+{% endblock %}
