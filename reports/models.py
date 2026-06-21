@@ -47,3 +47,21 @@ class WorkRecord(models.Model):
 
     def __str__(self) -> str:
         return f"{self.date} {self.driver_name} {self.job_type} {self.customer_name}"
+
+
+class DriverDailyLog(models.Model):
+    """ドライバーの1日の業務終了時刻を記録する。"""
+
+    driver_name = models.CharField(max_length=50, verbose_name="ドライバー名")
+    date = models.DateField(verbose_name="日付")
+    end_time = models.TimeField(verbose_name="業務終了時刻")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="登録日時")
+
+    class Meta:
+        verbose_name = "業務終了記録"
+        verbose_name_plural = "業務終了記録"
+        unique_together = [["driver_name", "date"]]
+        ordering = ["-date", "driver_name"]
+
+    def __str__(self) -> str:
+        return f"{self.date} {self.driver_name} 終了:{self.end_time}"
