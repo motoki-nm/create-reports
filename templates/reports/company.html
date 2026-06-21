@@ -127,7 +127,7 @@
       <td class="s11">¥</td>
       <td class="s3">{{ day.day_total|floatformat:0 }}</td>
       <td class="s12">処理場</td>
-      <td class="s13"></td>
+      <td class="s13">{% for e in day.processing_expenses %}{{ e.site_name }}:¥{{ e.amount|floatformat:0 }} {% endfor %}</td>
       <td class="s12">その他</td>
       <td class="s14" colspan="7"></td>
     </tr>
