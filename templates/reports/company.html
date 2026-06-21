@@ -127,17 +127,17 @@
       <td class="s11">¥</td>
       <td class="s3">{{ day.day_total|floatformat:0 }}</td>
       <td class="s12">処理場</td>
-      <td class="s13">{% for e in day.processing_expenses %}{{ e.site_name }}:¥{{ e.amount|floatformat:0 }} {% endfor %}</td>
+      <td class="s13"></td>
       <td class="s12">その他</td>
       <td class="s14" colspan="7"></td>
     </tr>
 
-    <!-- 行22: 廃材処理 | ¥ | | (D〜E rowspan=2) | (F〜M rowspan=2) -->
+    <!-- 行22: 廃材処理 | ¥ | | 処理場一覧 | (F〜M rowspan=2) -->
     <tr style="height:25px">
       <td class="s3 la">廃材処理</td>
       <td class="s11">¥</td>
       <td class="s3"></td>
-      <td class="s3" colspan="2" rowspan="2"></td>
+      <td class="s3" colspan="2" rowspan="2">{% for e in day.processing_expenses %}{{ e.site_name }}:{{ e.amount|floatformat:0 }} {% endfor %}</td>
       <td class="s6" colspan="8" rowspan="2"></td>
     </tr>
 
