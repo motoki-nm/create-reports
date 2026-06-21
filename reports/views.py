@@ -163,6 +163,7 @@ def company_report(request):
             "upper_slots": upper_slots,
             "lower_slots": lower_slots,
             "day_total": day_total,
+            "processing_expenses": processing_expenses,
         })
 
     return render(request, "reports/company.html", {"report_data": report_data})
