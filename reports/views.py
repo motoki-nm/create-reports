@@ -1,6 +1,6 @@
 """日報アプリのビュー。"""
 import logging
-from datetime import date
+from datetime import date, datetime
 
 from django.db.models import Count, Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
