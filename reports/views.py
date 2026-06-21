@@ -120,6 +120,12 @@ def company_report(request):
             work_end = max(ends) if ends else ""
             work_hours = f"{work_start} ~ {work_end}" if work_start else ""
 
+            # 業務終了ボタンで記録された終了時刻を優先して使う
+            log = DriverDailyLog.objects.filter(driver_name=name, date=d).first()
+            if log:
+                work_end = log.end_time.strftime("%H:%M")
+                work_hours = f"{work_start} ~ {work_end}" if work_start else f"~ {work_end}"
+
             drivers.append({
                 "name": name,
                 "total": total,
