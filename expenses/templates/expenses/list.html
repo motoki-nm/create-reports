@@ -9,10 +9,10 @@
 <div class="card">
   <h2>経費を登録する</h2>
 
-  <!-- 処理場プリセット選択 -->
-  <div class="form-group" style="margin-bottom:8px;">
+  <!-- 処理場プリセット選択（処理場選択時のみ表示） -->
+  <div class="form-group" id="preset-row" style="margin-bottom:8px;">
     <label for="id_use_preset">📋 登録済み処理場から選ぶ（選ぶと自動入力）</label>
-    <select id="id_use_preset" class="form-select" style="width:100%;padding:8px 12px;border:1px solid #ccc;border-radius:4px;font-size:14px;">
+    <select id="id_use_preset" style="width:100%;padding:8px 12px;border:1px solid #ccc;border-radius:4px;font-size:14px;">
       <option value="">--- 選択してください ---</option>
       {% for site in preset_sites %}
       <option value="{{ site.name }}">{{ site.name }}</option>
@@ -32,7 +32,7 @@
         {{ form.expense_type }}
       </div>
       <div class="form-group">
-        <label>処理場名・内容</label>
+        <label id="site-name-label">処理場名</label>
         {{ form.site_name }}
       </div>
       <div class="form-group">
