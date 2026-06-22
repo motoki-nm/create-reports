@@ -33,7 +33,7 @@ class WorkRecordForm(forms.ModelForm):
             "date": forms.DateInput(attrs={"type": "date"}),
             "customer_name": forms.TextInput(attrs={"placeholder": "例：山田様"}),
             "place": forms.TextInput(attrs={"placeholder": "例：新宿区"}),
-            "amount": forms.NumberInput(attrs={"placeholder": "例：15000"}),
+            "amount": forms.NumberInput(attrs={"placeholder": "例：15000", "min": "0"}),
             "time": forms.HiddenInput(),
         }
         labels = {
