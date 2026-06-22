@@ -23,9 +23,19 @@
   <form method="POST" action="{% url 'expenses:add' %}">
     {% csrf_token %}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      <div class="form-group">
-        <label>日付</label>
-        {{ form.date }}
+      <div class="form-group" style="grid-column:span 2;">
+        <label>どの業務日報に追加しますか？</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select id="id_date_quick" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid #ccc;border-radius:4px;font-size:14px;">
+            {% for d in recent_dates %}
+            <option value="{{ d.value }}" {% if d.value == today_str %}selected{% endif %}>{{ d.label }}</option>
+            {% endfor %}
+            <option value="__custom__">その他の日付を入力…</option>
+          </select>
+          <div id="custom-date-wrap" style="display:none;">
+            {{ form.date }}
+          </div>
+        </div>
       </div>
       <div class="form-group">
         <label>種別</label>
