@@ -107,12 +107,35 @@
 </div>
 
 <script>
+  const typeSelect    = document.getElementById('id_expense_type');
+  const presetRow     = document.getElementById('preset-row');
+  const siteNameLabel = document.getElementById('site-name-label');
+  const siteNameInput = document.getElementById('id_site_name');
+
+  const LABELS = {
+    '処理場':    { label: '処理場名',       placeholder: '処理場名を入力',       preset: true  },
+    '外注費':    { label: '外注先・内容',   placeholder: '例: 〇〇業者 作業費',  preset: false },
+    '交通費':    { label: '交通手段・区間', placeholder: '例: 電車 新宿→品川',   preset: false },
+    '切手・郵便':{ label: '内容',           placeholder: '例: 84円切手×10枚',    preset: false },
+    '消耗品費':  { label: '品目',           placeholder: '例: コピー用紙 A4 1箱', preset: false },
+    'その他':    { label: '内容（自由入力）',placeholder: '何の費用か入力してください', preset: false },
+  };
+
+  function updateForm() {
+    const type = typeSelect.value;
+    const cfg  = LABELS[type] || LABELS['その他'];
+    siteNameLabel.textContent    = cfg.label;
+    siteNameInput.placeholder    = cfg.placeholder;
+    presetRow.style.display      = cfg.preset ? '' : 'none';
+    if (!cfg.preset) siteNameInput.value = '';
+  }
+
+  typeSelect.addEventListener('change', updateForm);
+  updateForm(); // 初期表示
+
   // 処理場プリセット選択 → 処理場名欄に自動入力
   document.getElementById('id_use_preset').addEventListener('change', function () {
-    const name = this.value;
-    if (name) {
-      document.getElementById('id_site_name').value = name;
-    }
+    if (this.value) document.getElementById('id_site_name').value = this.value;
   });
 </script>
 {% endblock %}
