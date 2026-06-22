@@ -71,6 +71,7 @@
   <a href="{% url 'reports:drivers' %}" class="{% block nav_drivers %}{% endblock %}">ドライバー管理</a>
   <a href="{% url 'expenses:list' %}" class="{% block nav_expenses %}{% endblock %}">経費管理</a>
   <a href="/admin/">管理画面</a>
+  <a href="{% url 'reports:print_today' %}" style="margin-left:auto;background:#27ae60;color:#fff;border-radius:4px;padding:10px 18px;font-weight:bold;" class="{% block nav_print %}{% endblock %}">🖨️ 今日の日報を印刷</a>
 </nav>
 
 <main>
