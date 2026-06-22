@@ -9,17 +9,6 @@
 <div class="card">
   <h2>経費を登録する</h2>
 
-  <!-- 処理場プリセット選択（処理場選択時のみ表示） -->
-  <div class="form-group" id="preset-row" style="margin-bottom:8px;">
-    <label for="id_use_preset">📋 登録済み処理場から選ぶ（選ぶと自動入力）</label>
-    <select id="id_use_preset" style="width:100%;padding:8px 12px;border:1px solid #ccc;border-radius:4px;font-size:14px;">
-      <option value="">--- 選択してください ---</option>
-      {% for site in preset_sites %}
-      <option value="{{ site.name }}">{{ site.name }}</option>
-      {% endfor %}
-    </select>
-  </div>
-
   <form method="POST" action="{% url 'expenses:add' %}">
     {% csrf_token %}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -43,7 +32,17 @@
       </div>
       <div class="form-group">
         <label id="site-name-label">処理場名</label>
-        {{ form.site_name }}
+        <!-- 処理場：プルダウン -->
+        <select id="site-name-select" name="site_name" style="width:100%;padding:8px 12px;border:1px solid #ccc;border-radius:4px;font-size:14px;">
+          <option value="">--- 選択してください ---</option>
+          {% for site in preset_sites %}
+          <option value="{{ site.name }}">{{ site.name }}</option>
+          {% endfor %}
+        </select>
+        <!-- その他：自由入力 -->
+        <input type="text" id="site-name-text" name="site_name"
+               placeholder="何の費用か入力してください"
+               style="display:none;width:100%;padding:8px 12px;border:1px solid #ccc;border-radius:4px;font-size:14px;">
       </div>
       <div class="form-group">
         <label>金額（円）</label>
