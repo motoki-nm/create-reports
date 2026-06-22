@@ -117,31 +117,34 @@
 
 <script>
   const typeSelect    = document.getElementById('id_expense_type');
-  const presetRow     = document.getElementById('preset-row');
   const siteNameLabel = document.getElementById('site-name-label');
-  const siteNameInput = document.getElementById('id_site_name');
-
-  const LABELS = {
-    '処理場': { label: '処理場名',         placeholder: '処理場名を入力',             preset: true  },
-    'その他': { label: '内容（自由入力）', placeholder: '何の費用か入力してください', preset: false },
-  };
+  const siteSelect    = document.getElementById('site-name-select');
+  const siteText      = document.getElementById('site-name-text');
 
   function updateForm() {
-    const type = typeSelect.value;
-    const cfg  = LABELS[type] || LABELS['その他'];
-    siteNameLabel.textContent    = cfg.label;
-    siteNameInput.placeholder    = cfg.placeholder;
-    presetRow.style.display      = cfg.preset ? '' : 'none';
-    if (!cfg.preset) siteNameInput.value = '';
+    const isProcessing = typeSelect.value === '処理場';
+    siteNameLabel.textContent = isProcessing ? '処理場名' : '内容（自由入力）';
+    if (isProcessing) {
+      siteSelect.style.display = '';
+      siteSelect.name = 'site_name';
+      siteText.style.display = 'none';
+      siteText.name = '';
+    } else {
+      siteSelect.style.display = 'none';
+      siteSelect.name = '';
+      siteText.style.display = '';
+      siteText.name = 'site_name';
+      siteText.value = '';
+    }
   }
 
   typeSelect.addEventListener('change', updateForm);
   updateForm(); // 初期表示
 
   // 業務日報日付選択 → hiddenのdateフィールドに反映
-  const dateQuick      = document.getElementById('id_date_quick');
-  const customWrap     = document.getElementById('custom-date-wrap');
-  const dateInput      = document.getElementById('id_date');
+  const dateQuick  = document.getElementById('id_date_quick');
+  const customWrap = document.getElementById('custom-date-wrap');
+  const dateInput  = document.getElementById('id_date');
 
   function syncDate() {
     if (dateQuick.value === '__custom__') {
@@ -152,11 +155,6 @@
     }
   }
   dateQuick.addEventListener('change', syncDate);
-  syncDate(); // 初期反映
-
-  // 処理場プリセット選択 → 処理場名欄に自動入力
-  document.getElementById('id_use_preset').addEventListener('change', function () {
-    if (this.value) document.getElementById('id_site_name').value = this.value;
-  });
+  syncDate();
 </script>
 {% endblock %}
