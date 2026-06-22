@@ -72,7 +72,7 @@
     {% for slot in day.upper_slots %}
     <!-- 上段: 奇数行 (5,7,9,11,13) -->
     <tr style="height:25px">
-      <td class="s3 la" rowspan="2">{{ slot.driver.name|default:"" }}</td>
+      <td class="s3 la" rowspan="2" {% if forloop.first %}style="border-top:3px solid #000;"{% endif %}>{{ slot.driver.name|default:"" }}</td>
       <td class="s4">{% if slot.driver %}¥{% endif %}</td>
       <td class="s5">{% if slot.driver %}{{ slot.driver.total|floatformat:0 }}{% endif %}</td>
       <td class="s3">{{ slot.r1.name|default:"" }}</td>
