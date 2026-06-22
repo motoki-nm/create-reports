@@ -26,8 +26,12 @@ class Expense(models.Model):
     """1日の経費記録。処理場費・その他費用を登録する。"""
 
     class ExpenseType(models.TextChoices):
-        PROCESSING = "処理場", "処理場"
-        OTHER = "その他", "その他"
+        PROCESSING   = "処理場",   "処理場"
+        OUTSOURCING  = "外注費",   "外注費"
+        TRANSPORT    = "交通費",   "交通費"
+        POSTAGE      = "切手・郵便", "切手・郵便"
+        SUPPLIES     = "消耗品費", "消耗品費"
+        OTHER        = "その他",   "その他（自由入力）"
 
     date = models.DateField(verbose_name="日付")
     expense_type = models.CharField(
