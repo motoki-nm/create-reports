@@ -56,8 +56,27 @@
       {{ form.time.errors }}
     </div>
 
-    <button type="submit" class="btn btn-primary">💾 保存</button>
+    <button type="submit" class="btn btn-primary" id="submit-btn">💾 保存</button>
   </form>
+</div>
+
+<!-- 空欄確認モーダル -->
+<div id="confirm-modal" style="
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.5); z-index:1000;
+  align-items:center; justify-content:center;">
+  <div style="
+    background:#fff; border-radius:10px;
+    padding:28px 24px; max-width:340px; width:90%;
+    box-shadow:0 4px 20px rgba(0,0,0,.3);">
+    <p style="font-size:16px; font-weight:bold; margin-bottom:8px;">⚠️ 空欄があります</p>
+    <p id="modal-empty-list" style="font-size:13px; color:#e74c3c; margin-bottom:20px; line-height:1.7;"></p>
+    <p style="font-size:14px; color:#555; margin-bottom:24px;">このまま保存しますか？</p>
+    <div style="display:flex; gap:12px;">
+      <button id="modal-edit-btn" class="btn btn-secondary" style="flex:1;">✏️ 編集に戻る</button>
+      <button id="modal-save-btn" class="btn btn-primary" style="flex:1;">💾 保存する</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -65,6 +84,9 @@
   var startEl = document.getElementById('time_start');
   var endEl   = document.getElementById('time_end');
   var hidden  = document.querySelector('input[name="time"]');
+  var form    = document.querySelector('form');
+  var modal   = document.getElementById('confirm-modal');
+  var forceSubmit = false;
 
   function sync() {
     var s = startEl.value, e = endEl.value;
@@ -73,7 +95,49 @@
 
   startEl.addEventListener('change', sync);
   endEl.addEventListener('change', sync);
-  document.querySelector('form').addEventListener('submit', sync);
+
+  // 空欄チェック対象（任意項目のみ）
+  var optionalFields = [
+    { id: 'id_place',    label: '地名' },
+    { id: 'time_start',  label: '時間（開始）' },
+    { id: 'time_end',    label: '時間（終了）' },
+  ];
+
+  form.addEventListener('submit', function (e) {
+    if (forceSubmit) return; // モーダルで「保存」を押した後はスルー
+
+    sync(); // 時間を先に同期
+
+    var empties = optionalFields.filter(function (f) {
+      var el = document.getElementById(f.id);
+      return el && el.value.trim() === '';
+    });
+
+    if (empties.length === 0) return; // 空欄なし → そのまま保存
+
+    e.preventDefault(); // 送信を止めてモーダル表示
+
+    var list = empties.map(function (f) { return '・' + f.label; }).join('\n');
+    document.getElementById('modal-empty-list').innerText = list;
+    modal.style.display = 'flex';
+  });
+
+  // 「編集に戻る」→ モーダルを閉じるだけ
+  document.getElementById('modal-edit-btn').addEventListener('click', function () {
+    modal.style.display = 'none';
+  });
+
+  // 「保存する」→ 強制送信
+  document.getElementById('modal-save-btn').addEventListener('click', function () {
+    modal.style.display = 'none';
+    forceSubmit = true;
+    form.submit();
+  });
+
+  // モーダル外クリックで閉じる
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) modal.style.display = 'none';
+  });
 })();
 </script>
 {% endblock %}
