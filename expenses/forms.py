@@ -22,7 +22,7 @@ class ExpenseForm(forms.ModelForm):
             "date": forms.DateInput(attrs={"type": "date", "class": "form-input"}),
             "expense_type": forms.Select(attrs={"class": "form-select"}),
             "site_name": forms.TextInput(
-                attrs={"class": "form-input", "placeholder": "処理場名または内容を入力", "id": "id_site_name"}
+                attrs={"class": "form-input", "placeholder": "処理場名または詳細内容を入力", "id": "id_site_name"}
             ),
             "amount": forms.NumberInput(attrs={"class": "form-input", "placeholder": "0"}),
             "note": forms.TextInput(attrs={"class": "form-input", "placeholder": "備考（任意）"}),
