@@ -7,6 +7,13 @@ from .models import Driver, WorkRecord
 class WorkRecordForm(forms.ModelForm):
     """作業記録の入力・修正フォーム。"""
 
+    amount = forms.IntegerField(
+        label="金額（円）",
+        min_value=0,
+        required=True,
+        widget=forms.NumberInput(attrs={"placeholder": "例：15000", "min": "0"}),
+    )
+
     driver_name = forms.ChoiceField(
         choices=[],
         label="ドライバー名",
