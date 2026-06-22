@@ -1,6 +1,6 @@
 """経費アプリのビュー。"""
 import logging
-from datetime import date
+from datetime import date, timedelta
 
 from django.db.models import Sum
 from django.http import JsonResponse
@@ -10,6 +10,22 @@ from .forms import ExpenseForm, ProcessingSiteForm
 from .models import Expense, ProcessingSite
 
 logger = logging.getLogger(__name__)
+
+
+def _recent_dates(days: int = 7) -> list[dict]:
+    """直近N日分の日付リストを返す（業務日報日付選択用）。"""
+    today = date.today()
+    result = []
+    for i in range(days):
+        d = today - timedelta(days=i)
+        if i == 0:
+            label = f"今日 ({d.month}/{d.day})"
+        elif i == 1:
+            label = f"昨日 ({d.month}/{d.day})"
+        else:
+            label = f"{d.month}/{d.day}（{i}日前）"
+        result.append({"value": d.isoformat(), "label": label})
+    return result
 
 
 def expense_list(request):
@@ -34,6 +50,8 @@ def expense_list(request):
         "total": total,
         "date_filter": date_str,
         "preset_sites": ProcessingSite.objects.all(),
+        "recent_dates": _recent_dates(7),
+        "today_str": date.today().isoformat(),
     })
 
 
