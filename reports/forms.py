@@ -16,13 +16,6 @@ class WorkRecordForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = kwargs.get("instance")
-        # 新規入力時のみ金額の0を消す（編集時は既存値を表示）
-        if not instance and "amount" in self.initial:
-            del self.initial["amount"]
-        if not instance and self.fields["amount"].initial == 0:
-            self.fields["amount"].initial = None
-        if not instance and hasattr(self, 'instance') and not self.instance.pk:
-            self.initial.setdefault("amount", None)
         drivers = list(Driver.objects.values_list("name", flat=True))
 
         # 編集時に削除済みドライバー名が既存レコードにある場合も選択肢に残す
