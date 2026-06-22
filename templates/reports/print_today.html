@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ target_date }} 日報印刷</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Hiragino Sans", "Meiryo", sans-serif; background: #f5f6fa; color: #333; }
+
+    /* 画面表示用ヘッダー */
+    .screen-header {
+      background: #2c3e50; color: #fff;
+      padding: 16px 24px;
+      display: flex; align-items: center; gap: 16px;
+    }
+    .screen-header h1 { font-size: 18px; flex: 1; }
+    .btn-print {
+      background: #27ae60; color: #fff;
+      border: none; border-radius: 6px;
+      padding: 10px 28px; font-size: 16px;
+      cursor: pointer; font-weight: bold;
+    }
+    .btn-print:hover { background: #219a52; }
+    .btn-back {
+      background: #95a5a6; color: #fff;
+      border: none; border-radius: 6px;
+      padding: 10px 20px; font-size: 14px;
+      cursor: pointer; text-decoration: none;
+    }
+
+    .page-container { padding: 24px; }
+
+    /* 各ページ区切り */
+    .print-page {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.1);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .page-title {
+      font-size: 16px; font-weight: bold;
+      color: #2c3e50; margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #2c3e50;
+      display: flex; justify-content: space-between;
+    }
+
+    /* 個人作業日報テーブル */
+    .driver-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 12px; }
+    .driver-table th {
+      background: #f0f3f7; padding: 8px 10px;
+      text-align: left; border: 1px solid #ccc;
+      white-space: nowrap;
+    }
+    .driver-table td { padding: 7px 10px; border: 1px solid #ccc; }
+    .driver-table .text-right { text-align: right; }
+
+    /* 合計欄 */
+    .summary-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+    .summary-item {
+      background: #f0f3f7; border-radius: 4px;
+      padding: 6px 14px; font-size: 13px;
+    }
+    .summary-item span { font-weight: bold; color: #2c3e50; }
+
+    /* 業務日報（既存のExcel形式） */
+    .ex {
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 12px;
+      font-family: Arial, "Hiragino Sans", sans-serif;
+    }
+    .ex td { padding: 2px 4px; vertical-align: middle; white-space: nowrap; overflow: hidden; background: #fff; }
+    .ex tr:hover td { background: #fff; }
+    .ex .s3  { border-bottom:1px solid #000; border-right:1px solid #000; text-align:left; }
+    .ex .s4  { border-bottom:1px dashed #666; border-right:1px solid #b7b7b7; text-align:center; }
+    .ex .s5  { border-bottom:1px dashed #666; border-right:3px solid #000; text-align:left; }
+    .ex .s6  { border-bottom:1px solid #000; border-right:3px solid #000; text-align:left; }
+    .ex .s7  { border-bottom:1px solid #000; border-right:1px solid #b7b7b7; text-align:center; }
+    .ex .s8  { border-bottom:3px solid #000; border-right:1px solid #000; text-align:left; }
+    .ex .s9  { border-bottom:3px solid #000; border-right:3px solid #000; text-align:left; }
+    .ex .s10 { border-bottom:3px solid #000; border-right:1px solid #b7b7b7; text-align:center; }
+    .ex .s11 { border-bottom:1px solid #000; border-right:1px solid #000; text-align:center; }
+    .ex .s12 { text-align:left; }
+    .ex .s13 { border-right:1px solid #000; text-align:left; }
+    .ex .s14 { border-right:3px solid #000; text-align:left; }
+    .ex .s15 { border-bottom:3px solid #000; text-align:left; }
+    .ex .la  { border-left: 3px solid #000; }
+
+    /* 空状態 */
+    .empty { color: #888; padding: 20px 0; text-align: center; }
+
+    /* ===== 印刷スタイル ===== */
+    @media print {
+      body { background: #fff; }
+      .screen-header { display: none; }
+      .page-container { padding: 0; }
+      .print-page {
+        box-shadow: none;
+        border-radius: 0;
+        padding: 12mm 12mm 8mm;
+        margin-bottom: 0;
+        page-break-after: always;
+      }
+      .print-page:last-child { page-break-after: avoid; }
+      @page { size: A4; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 画面表示用ヘッダー（印刷時は非表示） -->
+<div class="screen-header">
+  <h1>📄 {{ target_date }} の日報</h1>
+  <a href="{% url 'reports:company' %}" class="btn-back">← 戻る</a>
+  <button class="btn-print" onclick="window.print()">🖨️ 印刷する</button>
+</div>
+
+<div class="page-container">
+
+  {% if not driver_reports %}
+  <div class="print-page">
+    <p class="empty">{{ target_date }} のデータがありません。</p>
+  </div>
+  {% endif %}
+
+  <!-- ===== 個人作業日報（ドライバー1人につき1ページ） ===== -->
+  {% for dr in driver_reports %}
+  <div class="print-page">
+    <div class="page-title">
+      <span>作業日報　{{ dr.name }}</span>
+      <span>{{ target_date }}</span>
+    </div>
+
+    {% if dr.records %}
+    <table class="driver-table">
+      <thead>
+        <tr>
+          <th style="width:36px;">No.</th>
+          <th>仕事種類</th>
+          <th>お客様名</th>
+          <th>地名</th>
+          <th class="text-right">金額</th>
+          <th>時間</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rec in dr.records %}
+        <tr>
+          <td class="text-right">{{ forloop.counter }}</td>
+          <td>{{ rec.job_type }}</td>
+          <td>{{ rec.customer_name }}</td>
+          <td>{{ rec.place }}</td>
+          <td class="text-right">{{ rec.amount|floatformat:0 }} 円</td>
+          <td>{{ rec.time }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="summary-row">
+      {% for jt, data in dr.totals.items %}
+      <div class="summary-item">{{ jt }}：<span>{{ data.count }}件　{{ data.total|floatformat:0 }}円</span></div>
+      {% endfor %}
+      <div class="summary-item" style="background:#2c3e50;color:#fff;">
+        合計：<span style="color:#fff;">{{ dr.grand_total|floatformat:0 }}円</span>
+      </div>
+      <div class="summary-item">業務終了：<span>{{ dr.end_time }}</span></div>
+    </div>
+    {% else %}
+    <p class="empty">この日の作業記録はありません。</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  <!-- ===== 業務日報（1ページ） ===== -->
+  {% if driver_reports %}
+  <div class="print-page">
+    <div class="page-title">
+      <span>業務日報</span>
+      <span>{{ target_date }}</span>
+    </div>
+    <div style="overflow-x:auto;">
+    <table class="ex">
+      <colgroup>
+        <col style="width:100px">
+        <col style="width:45px">
+        <col style="width:100px">
+        <col style="width:65px">
+        <col style="width:128px">
+        <col style="width:84px">
+        <col style="width:14px">
+        <col style="width:13px">
+        <col style="width:12px">
+        <col style="width:8px">
+        <col style="width:4px">
+        <col style="width:14px">
+        <col style="width:15px">
+      </colgroup>
+      <tr style="height:20px">
+        <td class="la" style="border-top:3px solid #000;border-bottom:3px solid #000;"></td>
+        <td style="border-top:3px solid #000;border-bottom:3px solid #000;border-right:1px solid #b7b7b7;"></td>
+        <td style="border-top:3px solid #000;border-bottom:3px solid #000;border-right:3px solid #000;"></td>
+        <td colspan="10" style="border-top:3px solid #000;border-bottom:3px solid #000;border-right:3px solid #000;"></td>
+      </tr>
+      {% for slot in upper_slots %}
+      <tr style="height:25px">
+        <td class="s3 la" rowspan="2">{{ slot.driver.name|default:"" }}</td>
+        <td class="s4">{% if slot.driver %}¥{% endif %}</td>
+        <td class="s5">{% if slot.driver %}{{ slot.driver.total|floatformat:0 }}{% endif %}</td>
+        <td class="s3">{{ slot.r1.name|default:"" }}</td>
+        <td class="s3" colspan="2">{{ slot.r1.counts|default:"" }}</td>
+        <td class="s6" colspan="7">{{ slot.r1.end_time|default:"" }}</td>
+      </tr>
+      <tr style="height:25px">
+        <td class="s7">{% if slot.driver %}¥{% endif %}</td>
+        <td class="s6"></td>
+        <td class="{% if forloop.last %}s8{% else %}s3{% endif %}">{{ slot.r2.name|default:"" }}</td>
+        <td class="{% if forloop.last %}s8{% else %}s3{% endif %}" colspan="2">{{ slot.r2.counts|default:"" }}</td>
+        <td class="{% if forloop.last %}s9{% else %}s6{% endif %}" colspan="7">{{ slot.r2.end_time|default:"" }}</td>
+      </tr>
+      {% endfor %}
+      {% for slot in lower_slots %}
+      <tr style="height:25px">
+        <td class="{% if forloop.last %}s8{% else %}s3{% endif %} la" rowspan="2">{{ slot.driver.name|default:"" }}</td>
+        <td class="s4">{% if slot.driver %}¥{% endif %}</td>
+        <td class="s5">{% if slot.driver %}{{ slot.driver.total|floatformat:0 }}{% endif %}</td>
+        <td class="s3">{{ slot.r1_c1.name|default:"" }}</td>
+        <td class="s3">{{ slot.r1_c1.work_hours|default:"" }}</td>
+        <td class="s3">{{ slot.r1_c2.name|default:"" }}</td>
+        <td class="s6" colspan="7">{{ slot.r1_c2.work_hours|default:"" }}</td>
+      </tr>
+      <tr style="height:25px">
+        <td class="{% if forloop.last %}s10{% else %}s7{% endif %}">{% if slot.driver %}¥{% endif %}</td>
+        <td class="{% if forloop.last %}s9{% else %}s6{% endif %}"></td>
+        <td class="{% if forloop.last %}s8{% else %}s3{% endif %}">{{ slot.r2_c1.name|default:"" }}</td>
+        <td class="{% if forloop.last %}s8{% else %}s3{% endif %}">{{ slot.r2_c1.work_hours|default:"" }}</td>
+        <td class="{% if forloop.last %}s8{% else %}s3{% endif %}">{{ slot.r2_c2.name|default:"" }}</td>
+        <td class="{% if forloop.last %}s9{% else %}s6{% endif %}" colspan="7">{{ slot.r2_c2.work_hours|default:"" }}</td>
+      </tr>
+      {% endfor %}
+      <tr style="height:25px">
+        <td class="s3 la">売上</td>
+        <td class="s11">¥</td>
+        <td class="s3">{{ day_total|floatformat:0 }}</td>
+        <td class="s12">処理場</td>
+        <td class="s13"></td>
+        <td class="s12">その他</td>
+        <td class="s14" colspan="7"></td>
+      </tr>
+      <tr style="height:25px">
+        <td class="s3 la">廃材処理</td>
+        <td class="s11">¥</td>
+        <td class="s3"></td>
+        <td class="s3" colspan="2" rowspan="2">{% for e in processing_expenses %}{{ e.site_name }}:{{ e.amount|floatformat:0 }} {% endfor %}</td>
+        <td class="s6" colspan="8" rowspan="2"></td>
+      </tr>
+      <tr style="height:43px">
+        <td class="s3 la">合計</td>
+        <td class="s11">¥</td>
+        <td class="s3">{{ day_total|floatformat:0 }}</td>
+      </tr>
+      <tr style="height:63px">
+        <td class="s8 la"></td>
+        <td class="s10"></td>
+        <td class="s15"></td>
+        <td class="s15"></td>
+        <td class="s15"></td>
+        <td class="s15"></td>
+        <td class="s9" colspan="7"></td>
+      </tr>
+    </table>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+</body>
+</html>
