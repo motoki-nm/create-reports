@@ -143,6 +143,22 @@
   typeSelect.addEventListener('change', updateForm);
   updateForm(); // 初期表示
 
+  // 業務日報日付選択 → hiddenのdateフィールドに反映
+  const dateQuick      = document.getElementById('id_date_quick');
+  const customWrap     = document.getElementById('custom-date-wrap');
+  const dateInput      = document.getElementById('id_date');
+
+  function syncDate() {
+    if (dateQuick.value === '__custom__') {
+      customWrap.style.display = '';
+    } else {
+      customWrap.style.display = 'none';
+      dateInput.value = dateQuick.value;
+    }
+  }
+  dateQuick.addEventListener('change', syncDate);
+  syncDate(); // 初期反映
+
   // 処理場プリセット選択 → 処理場名欄に自動入力
   document.getElementById('id_use_preset').addEventListener('change', function () {
     if (this.value) document.getElementById('id_site_name').value = this.value;
