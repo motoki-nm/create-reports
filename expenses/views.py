@@ -2,6 +2,7 @@
 import logging
 from datetime import date, timedelta
 
+from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -28,6 +29,7 @@ def _recent_dates(days: int = 7) -> list[dict]:
     return result
 
 
+@login_required
 def expense_list(request):
     """経費一覧と登録フォームを表示する。"""
     date_str = request.GET.get("date", "")
@@ -55,6 +57,7 @@ def expense_list(request):
     })
 
 
+@login_required
 def expense_add(request):
     """経費を登録する（POST のみ）。"""
     if request.method == "POST":
@@ -66,6 +69,7 @@ def expense_add(request):
     return redirect("expenses:list")
 
 
+@login_required
 def expense_delete(request, pk: int):
     """経費を削除する（POST のみ）。"""
     expense = get_object_or_404(Expense, pk=pk)
@@ -75,6 +79,7 @@ def expense_delete(request, pk: int):
     return redirect("expenses:list")
 
 
+@login_required
 def site_list(request):
     """処理場マスター一覧と登録フォームを表示する。"""
     if request.method == "POST":
@@ -90,6 +95,7 @@ def site_list(request):
     return render(request, "expenses/sites.html", {"form": form, "sites": sites})
 
 
+@login_required
 def site_delete(request, pk: int):
     """処理場マスターを削除する（POST のみ）。"""
     site = get_object_or_404(ProcessingSite, pk=pk)
@@ -99,6 +105,7 @@ def site_delete(request, pk: int):
     return redirect("expenses:sites")
 
 
+@login_required
 def api_sites(request):
     """処理場名一覧をJSONで返す（フォームの自動補完用）。"""
     sites = list(ProcessingSite.objects.values("id", "name"))

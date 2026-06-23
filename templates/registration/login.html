@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ログイン - 日報管理</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Hiragino Sans", "Meiryo", sans-serif; background: #f5f6fa; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .login-box { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.12); padding: 40px 32px; width: 90%; max-width: 360px; }
+    .brand { text-align: center; font-size: 22px; font-weight: bold; color: #2c3e50; margin-bottom: 8px; }
+    .subtitle { text-align: center; font-size: 13px; color: #888; margin-bottom: 28px; }
+    label { display: block; font-size: 13px; font-weight: bold; color: #555; margin-bottom: 6px; }
+    input[type="text"], input[type="password"] {
+      width: 100%; padding: 10px 14px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; margin-bottom: 16px;
+    }
+    input:focus { outline: none; border-color: #4a90d9; box-shadow: 0 0 0 2px rgba(74,144,217,.2); }
+    .btn { width: 100%; padding: 12px; background: #2c3e50; color: #fff; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; }
+    .btn:hover { background: #34495e; }
+    .errors { background: #fdecea; color: #c0392b; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+<div class="login-box">
+  <div class="brand">📋 日報管理システム</div>
+  <div class="subtitle">ドライバー名（ユーザー名）でログイン</div>
+
+  {% if form.errors %}
+  <div class="errors">ユーザー名またはパスワードが正しくありません。</div>
+  {% endif %}
+
+  <form method="POST">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <label for="id_username">ユーザー名（ドライバー名）</label>
+    <input type="text" id="id_username" name="username" autofocus autocomplete="username" placeholder="例：田中">
+    <label for="id_password">パスワード</label>
+    <input type="password" id="id_password" name="password" autocomplete="current-password" placeholder="パスワード">
+    <button type="submit" class="btn">ログイン</button>
+  </form>
+</div>
+</body>
+</html>

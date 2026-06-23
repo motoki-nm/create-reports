@@ -6,7 +6,7 @@
 <h1>作業記録 新規入力</h1>
 
 <div class="card" style="max-width: 520px;">
-  <form method="POST">
+  <form method="POST" id="record-form">
     {% csrf_token %}
 
     <div class="form-group">
@@ -48,12 +48,12 @@
     <div class="form-group">
       <label>時間</label>
       <div class="time-group">
-        <input type="time" id="time_start">
+        {{ form.start_time }}
         <span class="sep">～</span>
-        <input type="time" id="time_end">
+        {{ form.end_time }}
       </div>
-      {{ form.time }}
-      {{ form.time.errors }}
+      {{ form.start_time.errors }}
+      {{ form.end_time.errors }}
     </div>
 
     <button type="submit" class="btn btn-primary" id="submit-btn">💾 保存</button>
@@ -81,67 +81,51 @@
 
 <script>
 (function () {
-  var startEl = document.getElementById('time_start');
-  var endEl   = document.getElementById('time_end');
-  var hidden  = document.querySelector('input[name="time"]');
-  var form    = document.querySelector('form');
-  var modal   = document.getElementById('confirm-modal');
+  var form  = document.getElementById('record-form');
+  var modal = document.getElementById('confirm-modal');
   var forceSubmit = false;
-
-  function sync() {
-    var s = startEl.value, e = endEl.value;
-    hidden.value = (s && e) ? s + ' ~ ' + e : (s || e || '');
-  }
-
-  startEl.addEventListener('change', sync);
-  endEl.addEventListener('change', sync);
 
   // お客様名：フォーカスが外れたとき「様」を自動補完
   var customerEl = document.getElementById('id_customer_name');
-  customerEl.addEventListener('blur', function () {
-    var v = this.value.trim();
-    if (v && !v.endsWith('様')) this.value = v + '様';
-  });
+  if (customerEl) {
+    customerEl.addEventListener('blur', function () {
+      var v = this.value.trim();
+      if (v && !v.endsWith('様')) this.value = v + '様';
+    });
+  }
 
-  // 空欄チェック対象（任意項目のみ）
   var optionalFields = [
-    { id: 'id_place',    label: '地名' },
-    { id: 'time_start',  label: '時間（開始）' },
-    { id: 'time_end',    label: '時間（終了）' },
+    { id: 'id_place',      label: '地名' },
+    { id: 'id_start_time', label: '時間（開始）' },
+    { id: 'id_end_time',   label: '時間（終了）' },
   ];
 
   form.addEventListener('submit', function (e) {
-    if (forceSubmit) return; // モーダルで「保存」を押した後はスルー
-
-    sync(); // 時間を先に同期
+    if (forceSubmit) return;
 
     var empties = optionalFields.filter(function (f) {
       var el = document.getElementById(f.id);
       return el && el.value.trim() === '';
     });
 
-    if (empties.length === 0) return; // 空欄なし → そのまま保存
+    if (empties.length === 0) return;
 
-    e.preventDefault(); // 送信を止めてモーダル表示
-
-    var list = empties.map(function (f) { return '・' + f.label; }).join('\n');
-    document.getElementById('modal-empty-list').innerText = list;
+    e.preventDefault();
+    document.getElementById('modal-empty-list').innerText =
+      empties.map(function (f) { return '・' + f.label; }).join('\n');
     modal.style.display = 'flex';
   });
 
-  // 「編集に戻る」→ モーダルを閉じるだけ
   document.getElementById('modal-edit-btn').addEventListener('click', function () {
     modal.style.display = 'none';
   });
 
-  // 「保存する」→ 強制送信
   document.getElementById('modal-save-btn').addEventListener('click', function () {
     modal.style.display = 'none';
     forceSubmit = true;
     form.submit();
   });
 
-  // モーダル外クリックで閉じる
   modal.addEventListener('click', function (e) {
     if (e.target === modal) modal.style.display = 'none';
   });

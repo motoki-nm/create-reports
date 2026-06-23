@@ -68,9 +68,13 @@
   <a href="{% url 'reports:list' %}" class="{% block nav_list %}{% endblock %}">作業記録一覧</a>
   <a href="{% url 'reports:company' %}" class="{% block nav_company %}{% endblock %}">業務日報</a>
   <a href="{% url 'reports:work_end' %}" class="{% block nav_work_end %}{% endblock %}">業務終了</a>
+  <a href="{% url 'reports:monthly' %}" class="{% block nav_monthly %}{% endblock %}">月次グラフ</a>
   <a href="{% url 'reports:drivers' %}" class="{% block nav_drivers %}{% endblock %}">ドライバー管理</a>
   <a href="{% url 'expenses:list' %}" class="{% block nav_expenses %}{% endblock %}">経費管理</a>
   <a href="/admin/">管理画面</a>
+  {% if user.is_authenticated %}
+  <a href="{% url 'logout' %}" style="color:#bdc3c7;font-size:13px;">{{ user.username }}・ログアウト</a>
+  {% endif %}
   <a href="{% url 'reports:print_today' %}" style="margin-left:auto;background:#27ae60;color:#fff;border-radius:4px;padding:10px 18px;font-weight:bold;" class="{% block nav_print %}{% endblock %}">🖨️ 今日の日報を印刷</a>
 </nav>
 

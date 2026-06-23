@@ -16,7 +16,7 @@ class DriverAdmin(admin.ModelAdmin):
 class WorkRecordAdmin(admin.ModelAdmin):
     """作業記録の管理画面。"""
 
-    list_display = ["date", "driver_name", "job_type", "customer_name", "place", "amount", "time"]
+    list_display = ["date", "driver_name", "job_type", "customer_name", "place", "amount", "start_time", "end_time"]
     list_filter = ["date", "driver_name", "job_type"]
     search_fields = ["driver_name", "customer_name", "place"]
     date_hierarchy = "date"

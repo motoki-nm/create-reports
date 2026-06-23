@@ -35,13 +35,17 @@ class WorkRecordForm(forms.ModelForm):
 
     class Meta:
         model = WorkRecord
-        fields = ["date", "driver_name", "job_type", "customer_name", "place", "amount", "time"]
+        fields = [
+            "date", "driver_name", "job_type",
+            "customer_name", "place", "amount",
+            "start_time", "end_time",
+        ]
         widgets = {
             "date": forms.DateInput(attrs={"type": "date"}),
             "customer_name": forms.TextInput(attrs={"placeholder": "例：山田様"}),
             "place": forms.TextInput(attrs={"placeholder": "例：新宿区"}),
-            "amount": forms.NumberInput(attrs={"placeholder": "例：15000", "min": "0"}),
-            "time": forms.HiddenInput(),
+            "start_time": forms.TimeInput(attrs={"type": "time"}, format="%H:%M"),
+            "end_time": forms.TimeInput(attrs={"type": "time"}, format="%H:%M"),
         }
         labels = {
             "date": "日付",
@@ -50,7 +54,8 @@ class WorkRecordForm(forms.ModelForm):
             "customer_name": "お客様名",
             "place": "地名",
             "amount": "金額（円）",
-            "time": "時間",
+            "start_time": "開始時刻",
+            "end_time": "終了時刻",
         }
 
 

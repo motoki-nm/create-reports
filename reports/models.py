@@ -27,7 +27,9 @@ class WorkRecord(models.Model):
         OTHER = "その他", "その他"
 
     date = models.DateField(verbose_name="日付")
-    driver_name = models.CharField(max_length=50, verbose_name="ドライバー名")
+    # CharField のまま維持: ドライバー退職後も履歴を保持する業務要件のため。
+    # db_index で集計クエリを高速化。
+    driver_name = models.CharField(max_length=50, db_index=True, verbose_name="ドライバー名")
     job_type = models.CharField(
         max_length=10,
         choices=JobType.choices,
@@ -36,7 +38,8 @@ class WorkRecord(models.Model):
     customer_name = models.CharField(max_length=100, verbose_name="お客様名")
     place = models.CharField(max_length=100, blank=True, verbose_name="地名")
     amount = models.PositiveIntegerField(default=0, verbose_name="金額")
-    time = models.CharField(max_length=20, blank=True, verbose_name="時間")
+    start_time = models.TimeField(null=True, blank=True, verbose_name="開始時刻")
+    end_time = models.TimeField(null=True, blank=True, verbose_name="終了時刻")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="登録日時")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日時")
 
@@ -48,11 +51,20 @@ class WorkRecord(models.Model):
     def __str__(self) -> str:
         return f"{self.date} {self.driver_name} {self.job_type} {self.customer_name}"
 
+    @property
+    def time_display(self) -> str:
+        if self.start_time and self.end_time:
+            return f"{self.start_time.strftime('%H:%M')} ～ {self.end_time.strftime('%H:%M')}"
+        if self.start_time:
+            return self.start_time.strftime('%H:%M') + " ～"
+        return ""
+
 
 class DriverDailyLog(models.Model):
     """ドライバーの1日の業務終了時刻を記録する。"""
 
-    driver_name = models.CharField(max_length=50, verbose_name="ドライバー名")
+    # WorkRecord と同様に CharField を維持（退職後履歴保持のため）
+    driver_name = models.CharField(max_length=50, db_index=True, verbose_name="ドライバー名")
     date = models.DateField(verbose_name="日付")
     end_time = models.TimeField(verbose_name="業務終了時刻")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="登録日時")

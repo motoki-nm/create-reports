@@ -1,0 +1,75 @@
+{% extends "reports/base.html" %}
+{% block title %}月次グラフ - 日報管理{% endblock %}
+{% block nav_monthly %}active{% endblock %}
+
+{% block content %}
+<h1>月次・ドライバー別売上グラフ</h1>
+
+{% if has_data %}
+<div class="card">
+  <canvas id="monthlyChart" style="max-height:350px;"></canvas>
+</div>
+
+<div class="card">
+  <h2 style="font-size:16px;margin-bottom:12px;">月別集計</h2>
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>月</th>
+          {% for driver in drivers %}<th class="text-right">{{ driver }}</th>{% endfor %}
+          <th class="text-right">月合計</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in monthly_rows %}
+        <tr>
+          <td style="white-space:nowrap;">{{ row.month }}</td>
+          {% for amount in row.amounts %}
+          <td class="text-right">{% if amount %}¥{{ amount|floatformat:0 }}{% else %}-{% endif %}</td>
+          {% endfor %}
+          <td class="text-right"><strong>¥{{ row.total|floatformat:0 }}</strong></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+(function () {
+  const ctx = document.getElementById('monthlyChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {{ chart_data|safe }},
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: {
+          callbacks: {
+            label: (c) => c.dataset.label + ': ¥' + c.parsed.y.toLocaleString()
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { callback: (v) => '¥' + v.toLocaleString() }
+        }
+      }
+    }
+  });
+})();
+</script>
+
+{% else %}
+<div class="card">
+  <p style="color:#888;text-align:center;padding:32px 0;">
+    まだ作業記録がありません。<br>記録を追加すると月次グラフが表示されます。
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -19,6 +19,7 @@
       </div>
       <button type="submit" class="btn btn-primary btn-sm">絞り込み</button>
       <a href="{% url 'reports:list' %}" class="btn btn-secondary btn-sm">リセット</a>
+      <a href="{% url 'reports:export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-secondary btn-sm" style="background:#27ae60;">⬇ CSV</a>
     </div>
   </form>
 </div>
@@ -39,7 +40,7 @@
         <th>お客様名</th>
         <th>地名</th>
         <th class="text-right">金額</th>
-        <th>時間</th>
+        <th>時間（開始～終了）</th>
         <th>操作</th>
       </tr>
     </thead>
@@ -52,7 +53,7 @@
         <td>{{ record.customer_name }}</td>
         <td>{{ record.place }}</td>
         <td class="text-right">{{ record.amount|floatformat:0 }} 円</td>
-        <td>{{ record.time }}</td>
+        <td style="white-space:nowrap;">{{ record.time_display }}</td>
         <td style="white-space:nowrap;">
           <a href="{% url 'reports:edit' record.pk %}" class="btn btn-primary btn-sm">修正</a>
           <form method="POST" action="{% url 'reports:delete' record.pk %}" style="display:inline;"

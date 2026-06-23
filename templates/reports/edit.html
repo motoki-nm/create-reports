@@ -48,12 +48,12 @@
     <div class="form-group">
       <label>時間</label>
       <div class="time-group">
-        <input type="time" id="time_start">
+        {{ form.start_time }}
         <span class="sep">～</span>
-        <input type="time" id="time_end">
+        {{ form.end_time }}
       </div>
-      {{ form.time }}
-      {{ form.time.errors }}
+      {{ form.start_time.errors }}
+      {{ form.end_time.errors }}
     </div>
 
     <div style="display:flex; gap:10px;">
@@ -62,29 +62,4 @@
     </div>
   </form>
 </div>
-
-<script>
-(function () {
-  var startEl = document.getElementById('time_start');
-  var endEl   = document.getElementById('time_end');
-  var hidden  = document.querySelector('input[name="time"]');
-
-  // 既存の値を分解してセット（例: "12:00 ~ 13:00"）
-  var existing = hidden.value || '';
-  if (existing.indexOf('~') !== -1) {
-    var parts = existing.split('~').map(function (s) { return s.trim(); });
-    startEl.value = parts[0] || '';
-    endEl.value   = parts[1] || '';
-  }
-
-  function sync() {
-    var s = startEl.value, e = endEl.value;
-    hidden.value = (s && e) ? s + ' ~ ' + e : (s || e || '');
-  }
-
-  startEl.addEventListener('change', sync);
-  endEl.addEventListener('change', sync);
-  document.querySelector('form').addEventListener('submit', sync);
-})();
-</script>
 {% endblock %}
