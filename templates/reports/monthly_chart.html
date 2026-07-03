@@ -1,73 +1,176 @@
 {% extends "reports/base.html" %}
-{% block title %}月次グラフ - 日報管理{% endblock %}
+{% block title %}売上グラフ - 日報管理{% endblock %}
 {% block nav_monthly %}active{% endblock %}
 
 {% block content %}
-<h1>月次・ドライバー別売上グラフ</h1>
+<h1>売上グラフ</h1>
 
 {% if has_data %}
-<div class="card">
-  <canvas id="monthlyChart" style="max-height:350px;"></canvas>
+
+<!-- タブ -->
+<div style="display:flex;gap:0;margin-bottom:24px;border-bottom:2px solid #dde3ec;">
+  <button id="tab-monthly" onclick="switchTab('monthly')" style="
+    padding:10px 28px;border:none;background:none;cursor:pointer;
+    font-size:15px;font-weight:bold;color:#4a90d9;
+    border-bottom:3px solid #4a90d9;margin-bottom:-2px;">月別</button>
+  <button id="tab-daily" onclick="switchTab('daily')" style="
+    padding:10px 28px;border:none;background:none;cursor:pointer;
+    font-size:15px;font-weight:bold;color:#999;
+    border-bottom:3px solid transparent;margin-bottom:-2px;">日別</button>
 </div>
 
-<div class="card">
-  <h2 style="font-size:16px;margin-bottom:12px;">月別集計</h2>
-  <div style="overflow-x:auto;">
-    <table>
-      <thead>
-        <tr>
-          <th>月</th>
-          {% for driver in drivers %}<th class="text-right">{{ driver }}</th>{% endfor %}
-          <th class="text-right">月合計</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in monthly_rows %}
-        <tr>
-          <td style="white-space:nowrap;">{{ row.month }}</td>
-          {% for amount in row.amounts %}
-          <td class="text-right">{% if amount %}¥{{ amount|floatformat:0 }}{% else %}-{% endif %}</td>
-          {% endfor %}
-          <td class="text-right"><strong>¥{{ row.total|floatformat:0 }}</strong></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+<!-- ===== 月別パネル ===== -->
+<div id="panel-monthly">
+  <div class="card">
+    <canvas id="monthlyChart" style="max-height:360px;"></canvas>
   </div>
+  <div class="card">
+    <h2 style="font-size:16px;margin-bottom:12px;">月別集計</h2>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>月</th>
+            {% for driver in drivers %}<th class="text-right">{{ driver }}</th>{% endfor %}
+            <th class="text-right">合計</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in monthly_rows %}
+          <tr>
+            <td style="white-space:nowrap;">{{ row.month }}</td>
+            {% for amount in row.amounts %}
+            <td class="text-right">{% if amount %}¥{{ amount|floatformat:0 }}{% else %}-{% endif %}</td>
+            {% endfor %}
+            <td class="text-right"><strong>¥{{ row.total|floatformat:0 }}</strong></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 日別パネル ===== -->
+<div id="panel-daily" style="display:none;">
+  <!-- 月選択 -->
+  <div class="card" style="padding:16px 24px;">
+    <form method="get" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <input type="hidden" name="view" value="daily">
+      <label style="font-size:14px;font-weight:bold;margin:0;">表示月：</label>
+      <select name="month" onchange="this.form.submit()" style="width:auto;min-width:160px;">
+        {% for m in available_months %}
+        <option value="{{ m.value }}" {% if m.value == selected_month %}selected{% endif %}>{{ m.label }}</option>
+        {% endfor %}
+      </select>
+      <span style="font-size:13px;color:#888;">{{ selected_month_label }} 合計：<strong style="color:#2c3e50;">¥{{ daily_total|floatformat:0 }}</strong></span>
+    </form>
+  </div>
+
+  {% if daily_chart_data %}
+  <div class="card">
+    <canvas id="dailyChart" style="max-height:360px;"></canvas>
+  </div>
+  <div class="card">
+    <h2 style="font-size:16px;margin-bottom:12px;">{{ selected_month_label }} 日別集計</h2>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>日付</th>
+            {% for driver in drivers %}<th class="text-right">{{ driver }}</th>{% endfor %}
+            <th class="text-right">日合計</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in daily_rows %}
+          <tr>
+            <td style="white-space:nowrap;">{{ row.date }}</td>
+            {% for amount in row.amounts %}
+            <td class="text-right">{% if amount %}¥{{ amount|floatformat:0 }}{% else %}-{% endif %}</td>
+            {% endfor %}
+            <td class="text-right"><strong>¥{{ row.total|floatformat:0 }}</strong></td>
+          </tr>
+          {% endfor %}
+          <tr style="background:#f0f3f7;">
+            <td><strong>合計</strong></td>
+            {% for driver in drivers %}
+            <td class="text-right"><strong>-</strong></td>
+            {% endfor %}
+            <td class="text-right"><strong>¥{{ daily_total|floatformat:0 }}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="card">
+    <p style="color:#888;text-align:center;padding:32px 0;">この月のデータはありません。</p>
+  </div>
+  {% endif %}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
-(function () {
-  const ctx = document.getElementById('monthlyChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'line',
-    data: {{ chart_data|safe }},
+const MONTHLY_DATA = {{ chart_data|safe }};
+const DAILY_DATA   = {{ daily_chart_data|default:"null"|safe }};
+
+// 月別グラフ
+new Chart(document.getElementById('monthlyChart').getContext('2d'), {
+  type: 'line',
+  data: MONTHLY_DATA,
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: { callbacks: { label: (c) => c.dataset.label + ': ¥' + c.parsed.y.toLocaleString() } }
+    },
+    scales: { y: { beginAtZero: true, ticks: { callback: (v) => '¥' + v.toLocaleString() } } }
+  }
+});
+
+// 日別グラフ
+if (DAILY_DATA) {
+  new Chart(document.getElementById('dailyChart').getContext('2d'), {
+    type: 'bar',
+    data: DAILY_DATA,
     options: {
       responsive: true,
       plugins: {
         legend: { position: 'top' },
-        tooltip: {
-          callbacks: {
-            label: (c) => c.dataset.label + ': ¥' + c.parsed.y.toLocaleString()
-          }
-        }
+        tooltip: { callbacks: { label: (c) => c.dataset.label + ': ¥' + c.parsed.y.toLocaleString() } }
       },
       scales: {
-        y: {
-          beginAtZero: true,
-          ticks: { callback: (v) => '¥' + v.toLocaleString() }
-        }
+        x: { stacked: false },
+        y: { beginAtZero: true, ticks: { callback: (v) => '¥' + v.toLocaleString() } }
       }
     }
   });
-})();
+}
+
+// タブ切替
+const urlParams = new URLSearchParams(location.search);
+const initTab = urlParams.get('view') === 'daily' ? 'daily' : 'monthly';
+switchTab(initTab);
+
+function switchTab(tab) {
+  const isMonthly = tab === 'monthly';
+  document.getElementById('panel-monthly').style.display = isMonthly ? '' : 'none';
+  document.getElementById('panel-daily').style.display   = isMonthly ? 'none' : '';
+
+  const tM = document.getElementById('tab-monthly');
+  const tD = document.getElementById('tab-daily');
+  tM.style.color       = isMonthly ? '#4a90d9' : '#999';
+  tM.style.borderBottomColor = isMonthly ? '#4a90d9' : 'transparent';
+  tD.style.color       = isMonthly ? '#999' : '#4a90d9';
+  tD.style.borderBottomColor = isMonthly ? 'transparent' : '#4a90d9';
+}
 </script>
 
 {% else %}
 <div class="card">
   <p style="color:#888;text-align:center;padding:32px 0;">
-    まだ作業記録がありません。<br>記録を追加すると月次グラフが表示されます。
+    まだ作業記録がありません。<br>記録を追加すると売上グラフが表示されます。
   </p>
 </div>
 {% endif %}
