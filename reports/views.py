@@ -193,28 +193,29 @@ def company_report(request):
 
 @login_required
 def monthly_chart(request):
-    """月次・ドライバー別売上グラフ（Chart.js）。"""
-    raw = (
+    """売上グラフ：月別・日別をタブで切り替え（Chart.js）。"""
+    raw_monthly = (
         WorkRecord.objects
         .annotate(month=TruncMonth("date"))
         .values("month", "driver_name")
         .annotate(total=Sum("amount"))
         .order_by("month", "driver_name")
     )
-    if not raw:
+    if not raw_monthly:
         return render(request, "reports/monthly_chart.html", {"has_data": False})
 
-    months = sorted({d["month"].strftime("%Y年%m月") for d in raw})
-    drivers = sorted({d["driver_name"] for d in raw})
-    lookup: dict[str, dict[str, int]] = {}
-    for d in raw:
+    # --- 月別データ ---
+    months = sorted({d["month"].strftime("%Y年%m月") for d in raw_monthly})
+    drivers = sorted({d["driver_name"] for d in raw_monthly})
+    monthly_lookup: dict[str, dict[str, int]] = {}
+    for d in raw_monthly:
         m = d["month"].strftime("%Y年%m月")
-        lookup.setdefault(m, {})[d["driver_name"]] = d["total"]
+        monthly_lookup.setdefault(m, {})[d["driver_name"]] = d["total"]
 
-    datasets = [
+    monthly_datasets = [
         {
             "label": driver,
-            "data": [lookup.get(m, {}).get(driver, 0) for m in months],
+            "data": [monthly_lookup.get(m, {}).get(driver, 0) for m in months],
             "borderColor": _CHART_COLORS[i % len(_CHART_COLORS)],
             "backgroundColor": _CHART_COLORS[i % len(_CHART_COLORS)] + "33",
             "tension": 0.3,
@@ -225,16 +226,79 @@ def monthly_chart(request):
     monthly_rows = [
         {
             "month": m,
-            "amounts": [lookup.get(m, {}).get(d, 0) for d in drivers],
-            "total": sum(lookup.get(m, {}).values()),
+            "amounts": [monthly_lookup.get(m, {}).get(d, 0) for d in drivers],
+            "total": sum(monthly_lookup.get(m, {}).values()),
         }
         for m in months
     ]
+
+    # --- 日別データ ---
+    available_months = sorted(
+        {d["month"].strftime("%Y-%m") for d in raw_monthly}, reverse=True
+    )
+    selected_month_str = request.GET.get("month") or available_months[0]
+
+    daily_chart_data = None
+    daily_rows: list = []
+    daily_total = 0
+    try:
+        sel = datetime.strptime(selected_month_str, "%Y-%m")
+    except ValueError:
+        sel = None
+
+    if sel:
+        raw_daily = (
+            WorkRecord.objects
+            .filter(date__year=sel.year, date__month=sel.month)
+            .values("date", "driver_name")
+            .annotate(total=Sum("amount"))
+            .order_by("date", "driver_name")
+        )
+        days = sorted({str(d["date"]) for d in raw_daily})
+        day_labels = [f"{datetime.strptime(d, '%Y-%m-%d').day}日" for d in days]
+        daily_lookup: dict[str, dict[str, int]] = {}
+        for d in raw_daily:
+            daily_lookup.setdefault(str(d["date"]), {})[d["driver_name"]] = d["total"]
+
+        daily_datasets = [
+            {
+                "label": driver,
+                "data": [daily_lookup.get(day, {}).get(driver, 0) for day in days],
+                "backgroundColor": _CHART_COLORS[i % len(_CHART_COLORS)] + "cc",
+                "borderColor": _CHART_COLORS[i % len(_CHART_COLORS)],
+                "borderWidth": 1,
+            }
+            for i, driver in enumerate(drivers)
+        ]
+        daily_chart_data = json.dumps(
+            {"labels": day_labels, "datasets": daily_datasets}, ensure_ascii=False
+        )
+        daily_rows = [
+            {
+                "date": d,
+                "amounts": [daily_lookup.get(d, {}).get(dr, 0) for dr in drivers],
+                "total": sum(daily_lookup.get(d, {}).values()),
+            }
+            for d in days
+        ]
+        daily_total = sum(r["total"] for r in daily_rows)
+
+    available_month_labels = [
+        {"value": m, "label": datetime.strptime(m, "%Y-%m").strftime("%Y年%m月")}
+        for m in available_months
+    ]
+
     return render(request, "reports/monthly_chart.html", {
         "has_data": True,
-        "chart_data": json.dumps({"labels": months, "datasets": datasets}, ensure_ascii=False),
+        "chart_data": json.dumps({"labels": months, "datasets": monthly_datasets}, ensure_ascii=False),
         "monthly_rows": monthly_rows,
         "drivers": drivers,
+        "available_months": available_month_labels,
+        "selected_month": selected_month_str,
+        "daily_chart_data": daily_chart_data,
+        "daily_rows": daily_rows,
+        "daily_total": daily_total,
+        "selected_month_label": datetime.strptime(selected_month_str, "%Y-%m").strftime("%Y年%m月") if sel else "",
     })
 
 
