@@ -16,11 +16,20 @@
       {{ form.date.errors }}
     </div>
 
+    {% if is_admin %}
     <div class="form-group">
       {{ form.driver_name.label_tag }}
       {{ form.driver_name }}
       {{ form.driver_name.errors }}
     </div>
+    {% else %}
+    <div class="form-group">
+      <label>ドライバー名</label>
+      <div style="padding:12px 14px;background:#f1f5f9;border:1px solid var(--border);border-radius:8px;font-size:15px;font-weight:600;color:var(--text-primary);">
+        {{ request.user.username }}
+      </div>
+    </div>
+    {% endif %}
 
     <div class="form-group">
       {{ form.job_type.label_tag }}
