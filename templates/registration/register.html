@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アカウント登録 - 日報管理</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Hiragino Sans", "Meiryo", sans-serif; background: #f5f6fa; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+    .box { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.12); padding: 40px 32px; width: 100%; max-width: 400px; }
+    .brand { text-align: center; font-size: 22px; font-weight: bold; color: #2c3e50; margin-bottom: 6px; }
+    .subtitle { text-align: center; font-size: 13px; color: #888; margin-bottom: 28px; }
+    label { display: block; font-size: 13px; font-weight: bold; color: #555; margin-bottom: 6px; margin-top: 16px; }
+    input[type="text"], input[type="password"] {
+      width: 100%; padding: 10px 14px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px;
+    }
+    input:focus { outline: none; border-color: #4a90d9; box-shadow: 0 0 0 2px rgba(74,144,217,.2); }
+    .hint { font-size: 12px; color: #aaa; margin-top: 4px; line-height: 1.5; }
+    .error-box { background: #fdecea; color: #c0392b; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 8px; }
+    .field-errors { color: #c0392b; font-size: 12px; margin-top: 4px; list-style: none; }
+    .invite-section { border-top: 1px solid #eee; margin-top: 24px; padding-top: 20px; }
+    .btn { width: 100%; padding: 13px; background: #4a90d9; color: #fff; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 24px; }
+    .btn:hover { background: #357abd; }
+    .login-link { text-align: center; margin-top: 16px; font-size: 13px; color: #888; }
+    .login-link a { color: #4a90d9; text-decoration: none; }
+  </style>
+</head>
+<body>
+<div class="box">
+  <div class="brand">📋 日報管理システム</div>
+  <div class="subtitle">新規アカウント登録</div>
+
+  {% if error %}
+  <div class="error-box">{{ error }}</div>
+  {% endif %}
+
+  <form method="POST">
+    {% csrf_token %}
+
+    <label for="id_username">ユーザー名（ドライバー名）</label>
+    <input type="text" id="id_username" name="username"
+      value="{{ form.username.value|default:'' }}"
+      autofocus autocomplete="username" placeholder="例：田中">
+    {% if form.username.errors %}
+    <ul class="field-errors">{% for e in form.username.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    <label for="id_password1">パスワード</label>
+    <input type="password" id="id_password1" name="password1" autocomplete="new-password" placeholder="8文字以上">
+    <p class="hint">半角英数字を混ぜた8文字以上を推奨します</p>
+    {% if form.password1.errors %}
+    <ul class="field-errors">{% for e in form.password1.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    <label for="id_password2">パスワード（確認）</label>
+    <input type="password" id="id_password2" name="password2" autocomplete="new-password" placeholder="もう一度入力">
+    {% if form.password2.errors %}
+    <ul class="field-errors">{% for e in form.password2.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    <div class="invite-section">
+      <label for="id_invite_code">招待コード</label>
+      <input type="text" id="id_invite_code" name="invite_code" placeholder="責任者から受け取ったコードを入力">
+      <p class="hint">責任者から共有されたコードを入力してください</p>
+    </div>
+
+    <button type="submit" class="btn">登録する</button>
+  </form>
+
+  <p class="login-link">すでにアカウントをお持ちの方は <a href="/login/">ログイン</a></p>
+</div>
+</body>
+</html>
