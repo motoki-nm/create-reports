@@ -44,7 +44,7 @@ class WorkRecordForm(forms.ModelForm):
         widgets = {
             "date": forms.DateInput(attrs={"type": "date"}),
             "customer_name": forms.TextInput(attrs={"placeholder": "例：山田様"}),
-            "place": forms.TextInput(attrs={"placeholder": "例：新宿区"}),
+            "place": forms.TextInput(attrs={"placeholder": "例：住吉3丁目、大橋2-5"}),
             "start_time": forms.TimeInput(attrs={"type": "time"}, format="%H:%M"),
             "end_time": forms.TimeInput(attrs={"type": "time"}, format="%H:%M"),
         }
