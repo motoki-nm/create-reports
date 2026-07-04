@@ -1,11 +1,12 @@
 {% extends "reports/base.html" %}
 {% block title %}新規入力 - 日報管理{% endblock %}
 {% block nav_index %}active{% endblock %}
+{% block mob_index %}active{% endblock %}
 
 {% block content %}
 <h1>作業記録 新規入力</h1>
 
-<div class="card" style="max-width: 520px;">
+<div class="card" style="max-width:500px;">
   <form method="POST" id="record-form">
     {% csrf_token %}
 
@@ -56,7 +57,9 @@
       {{ form.end_time.errors }}
     </div>
 
-    <button type="submit" class="btn btn-primary" id="submit-btn">💾 保存</button>
+    <button type="submit" class="btn btn-primary btn-block" id="submit-btn" style="height:52px;font-size:16px;margin-top:8px;">
+      💾 保存
+    </button>
   </form>
 </div>
 
@@ -64,16 +67,16 @@
 <div id="confirm-modal" style="
   display:none; position:fixed; inset:0;
   background:rgba(0,0,0,.5); z-index:1000;
-  align-items:center; justify-content:center;">
+  align-items:center; justify-content:center; padding:20px;">
   <div style="
-    background:#fff; border-radius:10px;
-    padding:28px 24px; max-width:340px; width:90%;
-    box-shadow:0 4px 20px rgba(0,0,0,.3);">
-    <p style="font-size:16px; font-weight:bold; margin-bottom:8px;">⚠️ 空欄があります</p>
-    <p id="modal-empty-list" style="font-size:13px; color:#e74c3c; margin-bottom:20px; line-height:1.7;"></p>
-    <p style="font-size:14px; color:#555; margin-bottom:24px;">このまま保存しますか？</p>
-    <div style="display:flex; gap:12px;">
-      <button id="modal-edit-btn" class="btn btn-secondary" style="flex:1;">✏️ 編集に戻る</button>
+    background:#fff; border-radius:14px;
+    padding:28px 24px; max-width:340px; width:100%;
+    box-shadow:0 8px 32px rgba(0,0,0,.2);">
+    <p style="font-size:16px; font-weight:bold; margin-bottom:8px; color:#0f172a;">⚠️ 空欄があります</p>
+    <p id="modal-empty-list" style="font-size:14px; color:var(--danger); margin-bottom:16px; line-height:1.8;"></p>
+    <p style="font-size:14px; color:#64748b; margin-bottom:24px;">このまま保存しますか？</p>
+    <div style="display:flex; gap:10px;">
+      <button id="modal-edit-btn" class="btn btn-secondary" style="flex:1;">✏️ 戻る</button>
       <button id="modal-save-btn" class="btn btn-primary" style="flex:1;">💾 保存する</button>
     </div>
   </div>
@@ -85,7 +88,6 @@
   var modal = document.getElementById('confirm-modal');
   var forceSubmit = false;
 
-  // お客様名：フォーカスが外れたとき「様」を自動補完
   var customerEl = document.getElementById('id_customer_name');
   if (customerEl) {
     customerEl.addEventListener('blur', function () {
@@ -102,14 +104,11 @@
 
   form.addEventListener('submit', function (e) {
     if (forceSubmit) return;
-
     var empties = optionalFields.filter(function (f) {
       var el = document.getElementById(f.id);
       return el && el.value.trim() === '';
     });
-
     if (empties.length === 0) return;
-
     e.preventDefault();
     document.getElementById('modal-empty-list').innerText =
       empties.map(function (f) { return '・' + f.label; }).join('\n');
@@ -119,13 +118,11 @@
   document.getElementById('modal-edit-btn').addEventListener('click', function () {
     modal.style.display = 'none';
   });
-
   document.getElementById('modal-save-btn').addEventListener('click', function () {
     modal.style.display = 'none';
     forceSubmit = true;
     form.submit();
   });
-
   modal.addEventListener('click', function (e) {
     if (e.target === modal) modal.style.display = 'none';
   });
