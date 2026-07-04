@@ -513,9 +513,11 @@ def address_suggest(request):
         for item in data[:15]:
             title = item["properties"]["title"]
             # "福岡県福岡市博多区住吉3丁目" → "博多区"
-            m = _re.search(r"[一-鿿]+市([一-鿿]+区)", title)
+            # "東京都目黒区大橋二丁目" → "目黒区"
+            # 都/道/府/県/市 の直後から 区 までを取り出す
+            m = _re.search(r"(?:都|道|府|県|市)([^都道府県市区町村]+区)", title)
             if not m:
-                m = _re.search(r"([一-鿿]+区)", title)
+                m = _re.search(r"([^都道府県市]+区)", title)
             if m and title not in seen:
                 seen.add(title)
                 results.append({"district": m.group(1), "full": title})
