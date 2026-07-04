@@ -5,7 +5,7 @@
 {% block content %}
 <h1>ドライバー管理</h1>
 
-<div class="card" style="max-width: 480px;">
+<div class="card" style="max-width:480px;">
   <h2>新規登録</h2>
   <form method="POST">
     {% csrf_token %}
@@ -14,39 +14,44 @@
       {{ form.name }}
       {{ form.name.errors }}
     </div>
-    <button type="submit" class="btn btn-primary">追加</button>
+    <button type="submit" class="btn btn-primary" style="min-width:120px;">＋ 追加</button>
   </form>
 </div>
 
 <div class="card">
   <h2>登録済みドライバー</h2>
   {% if drivers %}
-  <table>
-    <thead>
-      <tr>
-        <th>ドライバー名</th>
-        <th>登録日時</th>
-        <th>操作</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for driver in drivers %}
-      <tr>
-        <td>{{ driver.name }}</td>
-        <td>{{ driver.created_at|date:"Y/m/d H:i" }}</td>
-        <td>
-          <form method="POST" action="{% url 'reports:driver_delete' driver.pk %}"
-                onsubmit="return confirm('「{{ driver.name }}」を削除しますか？');">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger btn-sm">削除</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ドライバー名</th>
+          <th>登録日時</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for driver in drivers %}
+        <tr>
+          <td style="font-weight:600;">{{ driver.name }}</td>
+          <td style="font-size:13px;color:var(--text-secondary);">{{ driver.created_at|date:"Y/m/d H:i" }}</td>
+          <td>
+            <form method="POST" action="{% url 'reports:driver_delete' driver.pk %}"
+                  onsubmit="return confirm('「{{ driver.name }}」を削除しますか？');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm">削除</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% else %}
-  <p style="color:#888;">ドライバーが登録されていません。上のフォームから追加してください。</p>
+  <div style="text-align:center;padding:32px 0;color:var(--text-secondary);">
+    <div style="font-size:32px;margin-bottom:10px;">👤</div>
+    <p>ドライバーが登録されていません。<br>上のフォームから追加してください。</p>
+  </div>
   {% endif %}
 </div>
 {% endblock %}
