@@ -1,6 +1,7 @@
 {% extends "reports/base.html" %}
 {% block title %}作業記録一覧 - 日報管理{% endblock %}
 {% block nav_list %}active{% endblock %}
+{% block mob_list %}active{% endblock %}
 
 {% block content %}
 <h1>作業記録一覧</h1>
@@ -11,71 +12,86 @@
       <div class="form-group">
         {{ filter_form.date.label_tag }}
         {{ filter_form.date }}
-        {% if filter_form.date.errors %}<span style="color:#e74c3c;font-size:12px;">{{ filter_form.date.errors|join:", " }}</span>{% endif %}
       </div>
       <div class="form-group">
         {{ filter_form.driver_name.label_tag }}
         {{ filter_form.driver_name }}
       </div>
-      <button type="submit" class="btn btn-primary btn-sm">絞り込み</button>
-      <a href="{% url 'reports:list' %}" class="btn btn-secondary btn-sm">リセット</a>
-      <a href="{% url 'reports:export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-secondary btn-sm" style="background:#27ae60;">⬇ CSV</a>
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+        <button type="submit" class="btn btn-primary btn-sm">絞り込み</button>
+        <a href="{% url 'reports:list' %}" class="btn btn-secondary btn-sm">リセット</a>
+        <a href="{% url 'reports:export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}"
+           class="btn btn-sm" style="background:#0f766e;color:#fff;">⬇ CSV</a>
+        <a href="{% url 'reports:trash' %}" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;">
+          🗑️ ゴミ箱{% if trash_count %} ({{ trash_count }}){% endif %}
+        </a>
+      </div>
     </div>
   </form>
 </div>
 
 <div class="card">
   {% if is_filtered %}
-  <p style="margin-bottom:12px;color:#4a90d9;font-size:13px;">
-    絞り込み結果：全 {{ total_count }} 件中 <strong>{{ records|length }} 件</strong> を表示
+  <p style="margin-bottom:12px;color:var(--primary);font-size:13px;font-weight:600;">
+    絞り込み：全 {{ total_count }} 件中 <strong>{{ records|length }} 件</strong> を表示
   </p>
   {% endif %}
   {% if records %}
-  <table>
-    <thead>
-      <tr>
-        <th>日付</th>
-        <th>ドライバー</th>
-        <th>仕事種類</th>
-        <th>お客様名</th>
-        <th>地名</th>
-        <th class="text-right">金額</th>
-        <th>時間（開始～終了）</th>
-        <th>操作</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for record in records %}
-      <tr>
-        <td>{{ record.date }}</td>
-        <td>{{ record.driver_name }}</td>
-        <td>{{ record.job_type }}</td>
-        <td>{{ record.customer_name }}</td>
-        <td>{{ record.place }}</td>
-        <td class="text-right">{{ record.amount|floatformat:0 }} 円</td>
-        <td style="white-space:nowrap;">{{ record.time_display }}</td>
-        <td style="white-space:nowrap;">
-          {% if request.user.is_superuser or record.driver_name == request.user.username %}
-          <a href="{% url 'reports:edit' record.pk %}" class="btn btn-primary btn-sm">修正</a>
-          <form method="POST" action="{% url 'reports:delete' record.pk %}" style="display:inline;"
-                onsubmit="return confirm('この記録をゴミ箱に移動しますか？');">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger btn-sm">削除</button>
-          </form>
-          {% else %}
-          <span style="font-size:12px;color:#aaa;">―</span>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>日付</th>
+          <th>ドライバー</th>
+          <th>種類</th>
+          <th>お客様名</th>
+          <th>地名</th>
+          <th class="text-right">金額</th>
+          <th>時間</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in records %}
+        <tr>
+          <td style="white-space:nowrap;font-size:13px;">{{ record.date }}</td>
+          <td style="white-space:nowrap;">{{ record.driver_name }}</td>
+          <td><span class="badge badge-blue">{{ record.job_type }}</span></td>
+          <td>{{ record.customer_name }}</td>
+          <td style="font-size:13px;color:var(--text-secondary);">{{ record.place }}</td>
+          <td class="text-right" style="white-space:nowrap;font-weight:600;">
+            ¥{{ record.amount|floatformat:0 }}
+          </td>
+          <td style="white-space:nowrap;font-size:13px;color:var(--text-secondary);">
+            {{ record.time_display }}
+          </td>
+          <td style="white-space:nowrap;">
+            {% if request.user.is_superuser or record.driver_name == request.user.username %}
+            <a href="{% url 'reports:edit' record.pk %}" class="btn btn-primary btn-sm">修正</a>
+            <form method="POST" action="{% url 'reports:delete' record.pk %}" style="display:inline;"
+                  onsubmit="return confirm('この記録をゴミ箱に移動しますか？');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm">削除</button>
+            </form>
+            {% else %}
+            <span style="font-size:12px;color:#cbd5e1;">―</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% else %}
-  {% if is_filtered %}
-  <p style="color:#888;">絞り込み条件に一致する記録がありません。</p>
-  {% else %}
-  <p style="color:#888;">記録がありません。</p>
-  {% endif %}
+  <div style="text-align:center;padding:40px 0;color:var(--text-secondary);">
+    {% if is_filtered %}
+    <div style="font-size:32px;margin-bottom:10px;">🔍</div>
+    <p>絞り込み条件に一致する記録がありません。</p>
+    {% else %}
+    <div style="font-size:32px;margin-bottom:10px;">📋</div>
+    <p>記録がありません。</p>
+    {% endif %}
+  </div>
   {% endif %}
 </div>
 {% endblock %}
