@@ -181,7 +181,7 @@
 
     // Show breadcrumb
     const bc = document.getElementById('breadcrumb');
-    bc.style.display = 'flex';
+    bc.style.cssText = 'display:flex; margin-bottom:12px; align-items:center; gap:10px;';
     document.getElementById('bc-district').textContent = district;
 
     document.getElementById('chart-title').textContent = `${district} 地域別 売上グラフ`;
