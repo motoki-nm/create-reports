@@ -481,6 +481,73 @@ def work_end(request):
 
 
 # ---------------------------------------------------------------------------
+# 地域別グラフ（区→丁目ドリルダウン）
+# ---------------------------------------------------------------------------
+
+@login_required
+def location_chart(request):
+    """地域別売上グラフ：区別 → 丁目別のドリルダウン（Chart.js）。"""
+    import re
+
+    raw_months = (
+        WorkRecord.objects.filter(is_deleted=False)
+        .annotate(month=TruncMonth("date"))
+        .values_list("month", flat=True)
+        .distinct()
+        .order_by("-month")
+    )
+    available_months = [m.strftime("%Y-%m") for m in raw_months]
+    selected_month_str = request.GET.get("month", "")
+
+    records_qs = WorkRecord.objects.filter(is_deleted=False)
+    if selected_month_str:
+        try:
+            sel = datetime.strptime(selected_month_str, "%Y-%m")
+            records_qs = records_qs.filter(date__year=sel.year, date__month=sel.month)
+        except ValueError:
+            selected_month_str = ""
+
+    district_data: dict = {}
+    for r in records_qs.values("place", "amount"):
+        place = (r["place"] or "").strip() or "その他"
+        amount = r["amount"]
+        if "区" in place:
+            idx = place.index("区")
+            district = place[: idx + 1]
+            street_full = place[idx + 1 :]
+        else:
+            district = "市内その他"
+            street_full = place
+        m = re.match(r"([^\d\-ー－]+)", street_full)
+        street = m.group(1).strip() if m else street_full
+        if not street:
+            street = street_full
+
+        d = district_data.setdefault(district, {"amount": 0, "count": 0, "streets": {}})
+        d["amount"] += amount
+        d["count"] += 1
+        s = d["streets"].setdefault(street, {"amount": 0, "count": 0})
+        s["amount"] += amount
+        s["count"] += 1
+
+    available_month_labels = [
+        {"value": mv, "label": datetime.strptime(mv, "%Y-%m").strftime("%Y年%m月")}
+        for mv in available_months
+    ]
+    selected_label = (
+        datetime.strptime(selected_month_str, "%Y-%m").strftime("%Y年%m月")
+        if selected_month_str else "全期間"
+    )
+
+    return render(request, "reports/location_chart.html", {
+        "chart_data": json.dumps(district_data, ensure_ascii=False),
+        "available_months": available_month_labels,
+        "selected_month": selected_month_str,
+        "selected_label": selected_label,
+    })
+
+
+# ---------------------------------------------------------------------------
 # ユーザー登録（招待コード制）
 # ---------------------------------------------------------------------------
 
