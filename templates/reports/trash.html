@@ -1,0 +1,63 @@
+{% extends "reports/base.html" %}
+{% block title %}ゴミ箱 - 日報管理{% endblock %}
+{% block nav_trash %}active{% endblock %}
+
+{% block content %}
+<h1>🗑️ ゴミ箱</h1>
+
+<div class="card" style="background:#fff8f0;border:1px solid #f39c12;margin-bottom:20px;padding:14px 20px;">
+  <p style="font-size:13px;color:#856404;margin:0;">
+    削除した記録はここに保管されます。<strong>復元</strong>すると作業記録一覧に戻ります。
+    {% if request.user.is_superuser %}管理者は<strong>完全削除</strong>もできます（元に戻せません）。{% endif %}
+  </p>
+</div>
+
+{% if messages %}
+<ul class="messages">{% for m in messages %}<li>{{ m }}</li>{% endfor %}</ul>
+{% endif %}
+
+<div class="card">
+  {% if records %}
+  <table>
+    <thead>
+      <tr>
+        <th>削除日時</th>
+        <th>日付</th>
+        <th>ドライバー</th>
+        <th>仕事種類</th>
+        <th>お客様名</th>
+        <th class="text-right">金額</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in records %}
+      <tr style="color:#999;">
+        <td style="white-space:nowrap;font-size:12px;">{{ record.deleted_at|date:"m/d H:i" }}</td>
+        <td>{{ record.date }}</td>
+        <td>{{ record.driver_name }}</td>
+        <td>{{ record.job_type }}</td>
+        <td>{{ record.customer_name }}</td>
+        <td class="text-right">{{ record.amount|floatformat:0 }} 円</td>
+        <td style="white-space:nowrap;">
+          <form method="POST" action="{% url 'reports:restore' record.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary btn-sm">↩ 復元</button>
+          </form>
+          {% if request.user.is_superuser %}
+          <form method="POST" action="{% url 'reports:permanent_delete' record.pk %}" style="display:inline;"
+                onsubmit="return confirm('完全に削除します。元に戻せません。よろしいですか？');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm">完全削除</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:#888;text-align:center;padding:32px 0;">ゴミ箱は空です。</p>
+  {% endif %}
+</div>
+{% endblock %}
