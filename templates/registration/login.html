@@ -6,27 +6,119 @@
   <title>ログイン - 日報管理</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: "Hiragino Sans", "Meiryo", sans-serif; background: #f5f6fa; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .login-box { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.12); padding: 40px 32px; width: 90%; max-width: 360px; }
-    .brand { text-align: center; font-size: 22px; font-weight: bold; color: #2c3e50; margin-bottom: 8px; }
-    .subtitle { text-align: center; font-size: 13px; color: #888; margin-bottom: 28px; }
-    label { display: block; font-size: 13px; font-weight: bold; color: #555; margin-bottom: 6px; }
-    input[type="text"], input[type="password"] {
-      width: 100%; padding: 10px 14px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; margin-bottom: 16px;
+    body {
+      font-family: "Hiragino Sans", "Meiryo", sans-serif;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
     }
-    input:focus { outline: none; border-color: #4a90d9; box-shadow: 0 0 0 2px rgba(74,144,217,.2); }
-    .btn { width: 100%; padding: 12px; background: #2c3e50; color: #fff; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; }
-    .btn:hover { background: #34495e; }
-    .errors { background: #fdecea; color: #c0392b; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; }
+    .box {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.10);
+      padding: 44px 36px;
+      width: 100%;
+      max-width: 380px;
+    }
+    .logo {
+      text-align: center;
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    .brand {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 32px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+      margin-bottom: 6px;
+      margin-top: 16px;
+    }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 16px;
+      color: #0f172a;
+      background: #f8fafc;
+      -webkit-appearance: none;
+    }
+    input:focus {
+      outline: none;
+      border-color: #2563eb;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+    .error-box {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 11px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    .btn {
+      width: 100%;
+      height: 52px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 24px;
+      transition: background .15s;
+    }
+    .btn:hover { background: #1d4ed8; }
+    .btn:active { transform: scale(.98); }
+    .footer-link {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 13px;
+      color: #64748b;
+    }
+    .footer-link a { color: #2563eb; text-decoration: none; font-weight: 600; }
+    .success-msg {
+      text-align: center;
+      color: #16a34a;
+      font-size: 14px;
+      font-weight: 600;
+      background: #dcfce7;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
   </style>
 </head>
 <body>
-<div class="login-box">
-  <div class="brand">📋 日報管理システム</div>
-  <div class="subtitle">ドライバー名（ユーザー名）でログイン</div>
+<div class="box">
+  <div class="logo">📋</div>
+  <div class="brand">日報管理システム</div>
+  <div class="subtitle">ドライバー名とパスワードでログイン</div>
+
+  {% if request.GET.registered %}
+  <div class="success-msg">✅ 登録が完了しました。ログインしてください。</div>
+  {% endif %}
 
   {% if form.errors %}
-  <div class="errors">ユーザー名またはパスワードが正しくありません。</div>
+  <div class="error-box">ユーザー名またはパスワードが正しくありません。</div>
   {% endif %}
 
   <form method="POST">
@@ -38,12 +130,8 @@
     <input type="password" id="id_password" name="password" autocomplete="current-password" placeholder="パスワード">
     <button type="submit" class="btn">ログイン</button>
   </form>
-  {% if request.GET.registered %}
-  <p style="text-align:center;margin-top:16px;font-size:13px;color:#27ae60;font-weight:bold;">✅ 登録が完了しました。ログインしてください。</p>
-  {% endif %}
-  <p style="text-align:center;margin-top:16px;font-size:13px;color:#888;">
-    アカウントをお持ちでない方は <a href="/register/" style="color:#4a90d9;text-decoration:none;">新規登録</a>
-  </p>
+
+  <p class="footer-link">アカウントをお持ちでない方は <a href="/register/">新規登録</a></p>
 </div>
 </body>
 </html>
