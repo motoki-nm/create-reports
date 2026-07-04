@@ -4,7 +4,9 @@ import json
 import logging
 from datetime import date, datetime
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
 from django.db.models import Count, Sum
 from django.db.models.functions import TruncMonth
 from django.http import HttpResponse
