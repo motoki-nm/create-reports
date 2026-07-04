@@ -29,9 +29,10 @@ class WorkRecordForm(forms.ModelForm):
         if instance and instance.driver_name and instance.driver_name not in drivers:
             drivers = sorted(drivers + [instance.driver_name])
 
-        self.fields["driver_name"].choices = [("", "--- 選択してください ---")] + [
+        self.fields["driver_name"].choices = [("", "選択してください")] + [
             (name, name) for name in drivers
         ]
+        self.fields["job_type"].choices = [("", "選択してください")] + list(WorkRecord.JobType.choices)
 
     class Meta:
         model = WorkRecord
