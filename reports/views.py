@@ -163,19 +163,23 @@ def _can_edit(user, record) -> bool:
 @login_required
 def edit(request, pk: int):
     """作業記録を修正する（自分の記録または管理者のみ）。"""
+    is_admin = request.user.is_superuser
     record = get_object_or_404(WorkRecord, pk=pk, is_deleted=False)
     if not _can_edit(request.user, record):
         messages.error(request, "他のドライバーの記録は修正できません。")
         return redirect("reports:list")
     if request.method == "POST":
-        form = WorkRecordForm(request.POST, instance=record)
+        post_data = request.POST.copy()
+        if not is_admin:
+            post_data["driver_name"] = record.driver_name
+        form = WorkRecordForm(post_data, instance=record)
         if form.is_valid():
             form.save()
             logger.info("作業記録を修正: id=%s", pk)
             return redirect("reports:list")
     else:
         form = WorkRecordForm(instance=record)
-    return render(request, "reports/edit.html", {"form": form, "record": record})
+    return render(request, "reports/edit.html", {"form": form, "record": record, "is_admin": is_admin})
 
 
 @login_required
