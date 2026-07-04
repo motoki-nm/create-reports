@@ -491,36 +491,41 @@ def work_end(request):
 
 @login_required
 def address_suggest(request):
-    """国土地理院 API で地名から区を検索。地名入力の自動補完用。"""
+    """国土地理院 API で地名から区を検索。地名入力の自動補完用。複数候補を返す。"""
     import re as _re
+    import requests as _req
     q = request.GET.get("q", "").strip()
     if not q:
-        return JsonResponse({"district": ""})
+        return JsonResponse({"results": []})
 
     if q in _address_cache:
         return JsonResponse(_address_cache[q])
 
-    url = ("https://msearch.gsi.go.jp/address-search/AddressSearch?q="
-           + urllib.parse.quote(q))
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=5) as res:
-            data = json.loads(res.read().decode())
-        if data:
-            title = data[0]["properties"]["title"]
+        r = _req.get(
+            "https://msearch.gsi.go.jp/address-search/AddressSearch",
+            params={"q": q},
+            timeout=5,
+        )
+        data = r.json()
+        results = []
+        seen: set = set()
+        for item in data[:15]:
+            title = item["properties"]["title"]
             # "福岡県福岡市博多区住吉3丁目" → "博多区"
-            # "東京都渋谷区渋谷1丁目" → "渋谷区"
             m = _re.search(r"[一-鿿]+市([一-鿿]+区)", title)
             if not m:
                 m = _re.search(r"([一-鿿]+区)", title)
-            if m:
-                result = {"district": m.group(1), "full": title}
-                _address_cache[q] = result
-                return JsonResponse(result)
+            if m and title not in seen:
+                seen.add(title)
+                results.append({"district": m.group(1), "full": title})
+        result = {"results": results[:6]}
+        _address_cache[q] = result
+        return JsonResponse(result)
     except Exception as e:
         logger.warning("address_suggest API error: %s", e)
 
-    result = {"district": ""}
+    result = {"results": []}
     _address_cache[q] = result
     return JsonResponse(result)
 
