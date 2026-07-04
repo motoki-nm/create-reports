@@ -84,20 +84,28 @@ def _build_company_layout(records_qs) -> tuple[list, list, int]:
 
 @login_required
 def index(request):
-    """作業記録の入力フォーム。ログインユーザー名がドライバー名と一致すれば自動選択。"""
+    """作業記録の入力フォーム。非adminはログインユーザー名を自動セット。"""
+    is_admin = request.user.is_superuser
+    Driver.objects.get_or_create(name=request.user.username)
+
     if request.method == "POST":
-        form = WorkRecordForm(request.POST)
+        post_data = request.POST.copy()
+        if not is_admin:
+            post_data["driver_name"] = request.user.username
+        form = WorkRecordForm(post_data)
         if form.is_valid():
             form.save()
             logger.info("作業記録を登録: %s %s", form.cleaned_data["driver_name"], form.cleaned_data["date"])
             return redirect("reports:index")
     else:
         initial = {"date": date.today()}
-        if Driver.objects.filter(name=request.user.username).exists():
+        if not is_admin:
+            initial["driver_name"] = request.user.username
+        elif Driver.objects.filter(name=request.user.username).exists():
             initial["driver_name"] = request.user.username
         form = WorkRecordForm(initial=initial)
 
-    return render(request, "reports/index.html", {"form": form})
+    return render(request, "reports/index.html", {"form": form, "is_admin": is_admin})
 
 
 @login_required
