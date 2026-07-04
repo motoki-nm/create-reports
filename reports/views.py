@@ -407,3 +407,27 @@ def work_end(request):
         "logs": list(logs.values()),
         "today": today,
     })
+
+
+# ---------------------------------------------------------------------------
+# ユーザー登録（招待コード制）
+# ---------------------------------------------------------------------------
+
+def register(request):
+    """招待コードを知っている人だけが新規アカウントを作れる登録ページ。"""
+    invite_code = settings.INVITE_CODE
+    error = None
+
+    if request.method == "POST":
+        if request.POST.get("invite_code", "").strip() != invite_code:
+            error = "招待コードが正しくありません。"
+        else:
+            form = UserCreationForm(request.POST)
+            if form.is_valid():
+                form.save()
+                logger.info("新規ユーザー登録: %s", form.cleaned_data["username"])
+                return redirect("/login/?registered=1")
+    else:
+        form = UserCreationForm()
+
+    return render(request, "registration/register.html", {"form": form, "error": error})
