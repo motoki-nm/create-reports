@@ -28,6 +28,8 @@ _CHART_COLORS = [
     "#9b59b6", "#1abc9c", "#f39c12", "#34495e",
 ]
 
+_address_cache: dict = {}  # in-memory cache for GSI API responses
+
 
 # ---------------------------------------------------------------------------
 # 共通ヘルパー
