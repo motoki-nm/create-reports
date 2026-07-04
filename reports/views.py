@@ -147,10 +147,18 @@ def export_csv(request):
     return response
 
 
+def _can_edit(user, record) -> bool:
+    """管理者、または自分の記録のみ編集可。"""
+    return user.is_superuser or record.driver_name == user.username
+
+
 @login_required
 def edit(request, pk: int):
-    """作業記録を修正する。"""
-    record = get_object_or_404(WorkRecord, pk=pk)
+    """作業記録を修正する（自分の記録または管理者のみ）。"""
+    record = get_object_or_404(WorkRecord, pk=pk, is_deleted=False)
+    if not _can_edit(request.user, record):
+        messages.error(request, "他のドライバーの記録は修正できません。")
+        return redirect("reports:list")
     if request.method == "POST":
         form = WorkRecordForm(request.POST, instance=record)
         if form.is_valid():
@@ -164,12 +172,58 @@ def edit(request, pk: int):
 
 @login_required
 def delete(request, pk: int):
-    """作業記録を削除する（POST のみ）。"""
-    record = get_object_or_404(WorkRecord, pk=pk)
+    """作業記録をゴミ箱に移動（自分の記録または管理者のみ）。"""
+    record = get_object_or_404(WorkRecord, pk=pk, is_deleted=False)
+    if not _can_edit(request.user, record):
+        messages.error(request, "他のドライバーの記録は削除できません。")
+        return redirect("reports:list")
     if request.method == "POST":
-        logger.info("作業記録を削除: id=%s %s", pk, record)
-        record.delete()
+        record.is_deleted = True
+        record.deleted_at = timezone.now()
+        record.save(update_fields=["is_deleted", "deleted_at"])
+        logger.info("作業記録をゴミ箱へ: id=%s %s", pk, record)
+        messages.success(request, f"記録をゴミ箱に移動しました。（ゴミ箱から復元できます）")
     return redirect("reports:list")
+
+
+@login_required
+def trash_list(request):
+    """ゴミ箱：削除済み記録の一覧・復元・完全削除。"""
+    if request.user.is_superuser:
+        records = WorkRecord.objects.filter(is_deleted=True)
+    else:
+        records = WorkRecord.objects.filter(is_deleted=True, driver_name=request.user.username)
+    return render(request, "reports/trash.html", {"records": records})
+
+
+@login_required
+def restore(request, pk: int):
+    """ゴミ箱から記録を復元する（自分の記録または管理者のみ）。"""
+    record = get_object_or_404(WorkRecord, pk=pk, is_deleted=True)
+    if not _can_edit(request.user, record):
+        messages.error(request, "他のドライバーの記録は復元できません。")
+        return redirect("reports:trash")
+    if request.method == "POST":
+        record.is_deleted = False
+        record.deleted_at = None
+        record.save(update_fields=["is_deleted", "deleted_at"])
+        logger.info("作業記録を復元: id=%s %s", pk, record)
+        messages.success(request, "記録を復元しました。")
+    return redirect("reports:trash")
+
+
+@login_required
+def permanent_delete(request, pk: int):
+    """完全削除（管理者のみ）。"""
+    if not request.user.is_superuser:
+        messages.error(request, "完全削除は管理者のみ操作できます。")
+        return redirect("reports:trash")
+    record = get_object_or_404(WorkRecord, pk=pk, is_deleted=True)
+    if request.method == "POST":
+        logger.info("作業記録を完全削除: id=%s %s", pk, record)
+        record.delete()
+        messages.success(request, "記録を完全に削除しました。")
+    return redirect("reports:trash")
 
 
 # ---------------------------------------------------------------------------
