@@ -92,43 +92,35 @@
 </div>
 
 <script>
-// 地名に区を自動補完する
+// 地名に区を国土地理院APIで自動補完する（全国対応）
 (function() {
-  var DISTRICT_MAP = {
-    // 博多区
-    '住吉':'博多区','中洲':'博多区','吉塚':'博多区','東比恵':'博多区',
-    '千代':'博多区','美野島':'博多区','博多駅前':'博多区','那珂':'博多区','板付':'博多区',
-    // 南区
-    '大橋':'南区','高宮':'南区','老司':'南区','長住':'南区',
-    '柏原':'南区','塩原':'南区','井尻':'南区','向新町':'南区',
-    // 早良区
-    '西新':'早良区','百道':'早良区','室見':'早良区','藤崎':'早良区',
-    '田村':'早良区','原':'早良区',
-    // 東区
-    '馬出':'東区','箱崎':'東区','香椎':'東区','若宮':'東区','青葉':'東区',
-    // 西区
-    '姪浜':'西区','今宿':'西区','周船寺':'西区','西都':'西区',
-    // 城南区
-    '鳥飼':'城南区','田島':'城南区','七隈':'城南区','金山':'城南区','別府':'城南区',
-    // 中央区
-    '天神':'中央区','大名':'中央区','赤坂':'中央区','薬院':'中央区',
-    '六本松':'中央区','平尾':'中央区','今泉':'中央区','渡辺通':'中央区',
-  };
   var placeEl = document.getElementById('id_place');
-  if (placeEl) {
-    placeEl.addEventListener('blur', function() {
-      var val = this.value.trim();
-      if (!val || val.includes('区')) return;
-      // 長いキーを優先して前方一致で検索
-      var keys = Object.keys(DISTRICT_MAP).sort(function(a,b){ return b.length - a.length; });
-      for (var i=0; i<keys.length; i++) {
-        if (val.startsWith(keys[i])) {
-          this.value = DISTRICT_MAP[keys[i]] + val;
-          break;
-        }
-      }
-    });
-  }
+  if (!placeEl) return;
+  var prevVal = '';
+
+  var hint = document.createElement('p');
+  hint.style.cssText = 'font-size:12px;color:#16a34a;margin-top:5px;display:none;';
+  placeEl.parentNode.insertBefore(hint, placeEl.nextSibling);
+
+  placeEl.addEventListener('blur', function() {
+    var val = this.value.trim();
+    if (!val || /[区市町村郡]/.test(val)) return;
+    prevVal = val;
+
+    fetch('/api/address-suggest/?q=' + encodeURIComponent(val))
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        if (!data.district || placeEl.value.includes(data.district)) return;
+        placeEl.value = data.district + prevVal;
+        hint.style.display = '';
+        hint.innerHTML = '📍 <b>' + data.district + '</b> を補完しました &nbsp;<a href="#" id="undo-suggest" style="color:var(--primary);">取り消す</a>';
+        document.getElementById('undo-suggest').onclick = function(e) {
+          e.preventDefault(); placeEl.value = prevVal; hint.style.display = 'none';
+        };
+      })
+      .catch(function(){});
+  });
+  placeEl.addEventListener('focus', function(){ hint.style.display = 'none'; });
 })();
 
 (function () {
