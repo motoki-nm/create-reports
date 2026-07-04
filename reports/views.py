@@ -486,6 +486,46 @@ def work_end(request):
 
 
 # ---------------------------------------------------------------------------
+# 住所補完 API（国土地理院）
+# ---------------------------------------------------------------------------
+
+@login_required
+def address_suggest(request):
+    """国土地理院 API で地名から区を検索。地名入力の自動補完用。"""
+    import re as _re
+    q = request.GET.get("q", "").strip()
+    if not q:
+        return JsonResponse({"district": ""})
+
+    if q in _address_cache:
+        return JsonResponse(_address_cache[q])
+
+    url = ("https://msearch.gsi.go.jp/address-search/AddressSearch?q="
+           + urllib.parse.quote(q))
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=5) as res:
+            data = json.loads(res.read().decode())
+        if data:
+            title = data[0]["properties"]["title"]
+            # "福岡県福岡市博多区住吉3丁目" → "博多区"
+            # "東京都渋谷区渋谷1丁目" → "渋谷区"
+            m = _re.search(r"[一-鿿]+市([一-鿿]+区)", title)
+            if not m:
+                m = _re.search(r"([一-鿿]+区)", title)
+            if m:
+                result = {"district": m.group(1), "full": title}
+                _address_cache[q] = result
+                return JsonResponse(result)
+    except Exception as e:
+        logger.warning("address_suggest API error: %s", e)
+
+    result = {"district": ""}
+    _address_cache[q] = result
+    return JsonResponse(result)
+
+
+# ---------------------------------------------------------------------------
 # 地域別グラフ（区→丁目ドリルダウン）
 # ---------------------------------------------------------------------------
 
