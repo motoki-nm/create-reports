@@ -18,6 +18,9 @@ from expenses.models import Expense
 from .forms import DriverForm, FilterForm, WorkRecordForm
 from .models import Driver, DriverDailyLog, WorkRecord
 
+import urllib.parse
+import urllib.request
+
 logger = logging.getLogger(__name__)
 
 _CHART_COLORS = [
