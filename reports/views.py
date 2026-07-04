@@ -483,8 +483,9 @@ def register(request):
         else:
             form = UserCreationForm(request.POST)
             if form.is_valid():
-                form.save()
-                logger.info("新規ユーザー登録: %s", form.cleaned_data["username"])
+                user = form.save()
+                Driver.objects.get_or_create(name=user.username)
+                logger.info("新規ユーザー登録: %s（Driverも自動作成）", user.username)
                 return redirect("/login/?registered=1")
     else:
         form = UserCreationForm()
