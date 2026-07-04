@@ -102,9 +102,9 @@ def index(request):
 
 @login_required
 def record_list(request):
-    """過去の作業記録一覧（日付・ドライバーで絞り込み可）。"""
+    """過去の作業記録一覧（削除済みを除く）。"""
     filter_form = FilterForm(request.GET or None)
-    records = WorkRecord.objects.all()
+    records = WorkRecord.objects.filter(is_deleted=False)
     is_filtered = False
 
     if filter_form and filter_form.is_valid():
@@ -119,7 +119,8 @@ def record_list(request):
         "records": records,
         "filter_form": filter_form or FilterForm(),
         "is_filtered": is_filtered,
-        "total_count": WorkRecord.objects.count(),
+        "total_count": WorkRecord.objects.filter(is_deleted=False).count(),
+        "trash_count": WorkRecord.objects.filter(is_deleted=True).count(),
     })
 
 
