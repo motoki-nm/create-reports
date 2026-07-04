@@ -38,6 +38,12 @@
     <input type="password" id="id_password" name="password" autocomplete="current-password" placeholder="パスワード">
     <button type="submit" class="btn">ログイン</button>
   </form>
+  {% if request.GET.registered %}
+  <p style="text-align:center;margin-top:16px;font-size:13px;color:#27ae60;font-weight:bold;">✅ 登録が完了しました。ログインしてください。</p>
+  {% endif %}
+  <p style="text-align:center;margin-top:16px;font-size:13px;color:#888;">
+    アカウントをお持ちでない方は <a href="/register/" style="color:#4a90d9;text-decoration:none;">新規登録</a>
+  </p>
 </div>
 </body>
 </html>
