@@ -17,4 +17,7 @@ urlpatterns = [
     path("drivers/delete/<int:pk>/", views.driver_delete, name="driver_delete"),
     path("work-end/", views.work_end, name="work_end"),
     path("print/today/", views.print_today, name="print_today"),
+    path("trash/", views.trash_list, name="trash"),
+    path("trash/restore/<int:pk>/", views.restore, name="restore"),
+    path("trash/delete/<int:pk>/", views.permanent_delete, name="permanent_delete"),
 ]
