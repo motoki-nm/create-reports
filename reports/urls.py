@@ -21,4 +21,5 @@ urlpatterns = [
     path("trash/restore/<int:pk>/", views.restore, name="restore"),
     path("trash/delete/<int:pk>/", views.permanent_delete, name="permanent_delete"),
     path("location/", views.location_chart, name="location"),
+    path("api/address-suggest/", views.address_suggest, name="address_suggest"),
 ]
