@@ -42,6 +42,8 @@ class WorkRecord(models.Model):
     end_time = models.TimeField(null=True, blank=True, verbose_name="終了時刻")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="登録日時")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日時")
+    is_deleted = models.BooleanField(default=False, verbose_name="削除済み")
+    deleted_at = models.DateTimeField(null=True, blank=True, verbose_name="削除日時")
 
     class Meta:
         verbose_name = "作業記録"
