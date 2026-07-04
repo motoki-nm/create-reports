@@ -1,53 +1,72 @@
 {% extends "reports/base.html" %}
 {% block title %}業務終了 - 日報管理{% endblock %}
 {% block nav_work_end %}active{% endblock %}
+{% block mob_work_end %}active{% endblock %}
 
 {% block content %}
 <h1>業務終了</h1>
 
-<!-- 自分のボタン -->
-<div class="card" style="max-width:400px;text-align:center;padding:40px 32px;">
-  <div style="font-size:18px;font-weight:bold;color:#2c3e50;margin-bottom:8px;">{{ driver_name }}</div>
-  <div style="font-size:13px;color:#888;margin-bottom:28px;">{{ today }}</div>
+<div class="card" style="max-width:420px;text-align:center;padding:36px 28px;">
+  <div style="font-size:22px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">
+    {{ driver_name }}
+  </div>
+  <div style="font-size:14px;color:var(--text-secondary);margin-bottom:28px;">{{ today }}</div>
 
   {% if my_log %}
-  <div style="font-size:28px;font-weight:bold;color:#16a34a;margin-bottom:16px;">
-    {{ my_log.end_time|time:"H:i" }} 終了済み ✅
+  <div style="margin-bottom:20px;">
+    <span style="font-size:36px;font-weight:700;color:var(--success);">{{ my_log.end_time|time:"H:i" }}</span>
+    <div style="font-size:14px;color:var(--success);margin-top:4px;font-weight:600;">✅ 終了済み</div>
   </div>
-  <p style="font-size:13px;color:#888;margin-bottom:24px;">再度押すと時刻が上書きされます</p>
+  <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px;">再度押すと時刻が上書きされます</p>
   {% endif %}
 
   <form method="POST">
     {% csrf_token %}
     <button type="submit" style="
-      width:100%;padding:20px;border:none;border-radius:10px;
-      font-size:20px;font-weight:bold;cursor:pointer;
-      {% if my_log %}background:#dcfce7;color:#15803d;{% else %}background:#ef4444;color:#fff;{% endif %}
-      box-shadow:0 4px 12px rgba(0,0,0,.15);">
+      width:100%; height:64px; border:none; border-radius:12px;
+      font-size:20px; font-weight:700; cursor:pointer;
+      {% if my_log %}background:var(--success-bg);color:var(--success);{% else %}background:var(--danger);color:#fff;{% endif %}
+      box-shadow:0 4px 14px rgba(0,0,0,.15);
+      transition:transform .1s;">
       {% if my_log %}🔄 打刻し直す{% else %}🏁 業務終了{% endif %}
     </button>
   </form>
 </div>
 
-<!-- 全員の終了状況 -->
 <div class="card">
-  <h2 style="font-size:16px;margin-bottom:12px;">本日 {{ today }} の終了状況</h2>
+  <h2>本日 {{ today }} の終了状況</h2>
   {% if all_logs %}
-  <table>
-    <thead>
-      <tr><th>ドライバー</th><th>終了時刻</th></tr>
-    </thead>
-    <tbody>
-      {% for log in all_logs %}
-      <tr>
-        <td>{% if log.driver_name == driver_name %}<strong>{{ log.driver_name }}（自分）</strong>{% else %}{{ log.driver_name }}{% endif %}</td>
-        <td>{{ log.end_time|time:"H:i" }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ドライバー</th>
+          <th>終了時刻</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in all_logs %}
+        <tr>
+          <td>
+            {% if log.driver_name == driver_name %}
+            <strong>{{ log.driver_name }}</strong>
+            <span class="badge badge-blue" style="margin-left:6px;font-size:11px;">自分</span>
+            {% else %}
+            {{ log.driver_name }}
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge badge-green">{{ log.end_time|time:"H:i" }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% else %}
-  <p style="color:#888;text-align:center;padding:16px 0;">まだ誰も終了していません。</p>
+  <p style="color:var(--text-secondary);text-align:center;padding:20px 0;font-size:14px;">
+    まだ誰も終了していません。
+  </p>
   {% endif %}
 </div>
 {% endblock %}
