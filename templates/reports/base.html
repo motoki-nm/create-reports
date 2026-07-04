@@ -360,6 +360,7 @@
   <div class="menu-panel" onclick="event.stopPropagation()">
     <div class="handle"></div>
     <a href="{% url 'reports:monthly' %}" onclick="closeMenu()"><span class="icon">📈</span>売上グラフ</a>
+    <a href="{% url 'reports:location' %}" onclick="closeMenu()" class="{% block mob_location %}{% endblock %}"><span class="icon">📍</span>地域グラフ</a>
     <a href="{% url 'reports:drivers' %}" onclick="closeMenu()"><span class="icon">👤</span>ドライバー管理</a>
     <a href="{% url 'expenses:list' %}" onclick="closeMenu()"><span class="icon">💴</span>経費管理</a>
     <a href="{% url 'reports:trash' %}" onclick="closeMenu()"><span class="icon">🗑️</span>ゴミ箱</a>
