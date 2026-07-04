@@ -20,4 +20,5 @@ urlpatterns = [
     path("trash/", views.trash_list, name="trash"),
     path("trash/restore/<int:pk>/", views.restore, name="restore"),
     path("trash/delete/<int:pk>/", views.permanent_delete, name="permanent_delete"),
+    path("location/", views.location_chart, name="location"),
 ]
