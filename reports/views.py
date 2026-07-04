@@ -443,26 +443,28 @@ def driver_delete(request, pk: int):
 
 @login_required
 def work_end(request):
-    """業務終了ボタン。ドライバーが押すと現在時刻を終了時刻として記録する。"""
+    """業務終了ボタン。ログインユーザー自身の終了時刻を記録する。"""
     today = date.today()
-    logs = {log.driver_name: log for log in DriverDailyLog.objects.filter(date=today)}
+    driver_name = request.user.username
 
     if request.method == "POST":
-        driver_name = request.POST.get("driver_name", "").strip()
-        if driver_name:
-            now = datetime.now().time().replace(second=0, microsecond=0)
-            _, created = DriverDailyLog.objects.update_or_create(
-                driver_name=driver_name,
-                date=today,
-                defaults={"end_time": now},
-            )
-            logger.info("業務終了%s: %s %s %s", "登録" if created else "更新", driver_name, today, now)
+        now = datetime.now().time().replace(second=0, microsecond=0)
+        _, created = DriverDailyLog.objects.update_or_create(
+            driver_name=driver_name,
+            date=today,
+            defaults={"end_time": now},
+        )
+        logger.info("業務終了%s: %s %s %s", "登録" if created else "更新", driver_name, today, now)
         return redirect("reports:work_end")
 
+    my_log = DriverDailyLog.objects.filter(driver_name=driver_name, date=today).first()
+    all_logs = DriverDailyLog.objects.filter(date=today).order_by("driver_name")
+
     return render(request, "reports/work_end.html", {
-        "driver_status": [{"driver": d, "log": logs.get(d.name)} for d in Driver.objects.all()],
-        "logs": list(logs.values()),
+        "my_log": my_log,
+        "all_logs": all_logs,
         "today": today,
+        "driver_name": driver_name,
     })
 
 
