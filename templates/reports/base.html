@@ -70,6 +70,7 @@
   <a href="{% url 'reports:work_end' %}" class="{% block nav_work_end %}{% endblock %}">業務終了</a>
   <a href="{% url 'reports:monthly' %}" class="{% block nav_monthly %}{% endblock %}">売上グラフ</a>
   <a href="{% url 'reports:drivers' %}" class="{% block nav_drivers %}{% endblock %}">ドライバー管理</a>
+  <a href="{% url 'reports:trash' %}" class="{% block nav_trash %}{% endblock %}">🗑️ ゴミ箱</a>
   <a href="{% url 'expenses:list' %}" class="{% block nav_expenses %}{% endblock %}">経費管理</a>
   <a href="/admin/">管理画面</a>
   {% if user.is_authenticated %}
