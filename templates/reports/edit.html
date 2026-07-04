@@ -77,30 +77,73 @@
   var placeEl = document.getElementById('id_place');
   if (!placeEl) return;
   var prevVal = '';
+  var timer = null;
+  var wrapper = placeEl.parentNode;
+  wrapper.style.position = 'relative';
+
+  var dd = document.createElement('div');
+  dd.style.cssText = 'position:absolute;z-index:500;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);width:100%;max-height:220px;overflow-y:auto;display:none;top:100%;left:0;margin-top:4px;';
+  wrapper.appendChild(dd);
 
   var hint = document.createElement('p');
   hint.style.cssText = 'font-size:12px;color:#16a34a;margin-top:5px;display:none;';
-  placeEl.parentNode.insertBefore(hint, placeEl.nextSibling);
+  wrapper.appendChild(hint);
 
-  placeEl.addEventListener('blur', function() {
-    var val = this.value.trim();
-    if (!val || /[区市町村郡]/.test(val)) return;
+  function hideDD() { dd.style.display = 'none'; }
+
+  function applyDistrict(district) {
+    placeEl.value = district + prevVal;
+    hint.style.display = '';
+    hint.innerHTML = '📍 <b>' + district + '</b> を補完しました &nbsp;<a href="#" style="color:var(--primary);text-decoration:underline;" class="undo-suggest">取り消す</a>';
+    hint.querySelector('.undo-suggest').onclick = function(e) {
+      e.preventDefault(); placeEl.value = prevVal; hint.style.display = 'none';
+    };
+    hideDD();
+  }
+
+  function suggest(val) {
+    if (!val || /[区市町村郡]/.test(val)) { hideDD(); return; }
     prevVal = val;
-
     fetch('/api/address-suggest/?q=' + encodeURIComponent(val))
       .then(function(r){ return r.json(); })
       .then(function(data) {
-        if (!data.district || placeEl.value.includes(data.district)) return;
-        placeEl.value = data.district + prevVal;
-        hint.style.display = '';
-        hint.innerHTML = '📍 <b>' + data.district + '</b> を補完しました &nbsp;<a href="#" id="undo-suggest" style="color:var(--primary);">取り消す</a>';
-        document.getElementById('undo-suggest').onclick = function(e) {
-          e.preventDefault(); placeEl.value = prevVal; hint.style.display = 'none';
-        };
+        var results = data.results || [];
+        if (!results.length) { hideDD(); return; }
+        var unique = results.map(function(r){ return r.district; }).filter(function(d,i,a){ return a.indexOf(d)===i; });
+        if (unique.length === 1) { applyDistrict(unique[0]); return; }
+        dd.innerHTML = '<div style="padding:6px 14px;font-size:11px;color:#64748b;border-bottom:1px solid #f1f5f9;">候補を選択してください</div>';
+        results.forEach(function(item) {
+          var opt = document.createElement('div');
+          opt.style.cssText = 'padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid #f1f5f9;';
+          opt.textContent = item.full;
+          opt.onmousedown = function(e) { e.preventDefault(); applyDistrict(item.district); };
+          opt.onmouseenter = function() { this.style.background='#f1f5f9'; };
+          opt.onmouseleave = function() { this.style.background=''; };
+          dd.appendChild(opt);
+        });
+        dd.style.display = '';
       })
-      .catch(function(){});
+      .catch(function() { hideDD(); });
+  }
+
+  placeEl.addEventListener('blur', function() {
+    setTimeout(function() { hideDD(); }, 180);
+    var val = placeEl.value.trim();
+    if (!val || /[区市町村郡]/.test(val)) return;
+    clearTimeout(timer);
+    suggest(val);
   });
-  placeEl.addEventListener('focus', function(){ hint.style.display = 'none'; });
+
+  placeEl.addEventListener('input', function() {
+    hint.style.display = 'none';
+    clearTimeout(timer);
+    var val = this.value.trim();
+    if (!val || /[区市町村郡]/.test(val)) { hideDD(); return; }
+    timer = setTimeout(function() { suggest(val); }, 600);
+  });
+
+  placeEl.addEventListener('focus', function() { hint.style.display = 'none'; });
+  document.addEventListener('click', function(e) { if (!wrapper.contains(e.target)) hideDD(); });
 })();
 </script>
 {% endblock %}
