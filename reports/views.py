@@ -11,7 +11,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.db.models import Count, Sum
 from django.utils import timezone
 from django.db.models.functions import TruncMonth
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from expenses.models import Expense
@@ -48,7 +48,8 @@ def _build_company_layout(records_qs) -> tuple[list, list, int]:
     drivers = []
     for name in driver_names:
         dr = records_qs.filter(driver_name=name)
-        total = dr.aggregate(total=Sum("amount"))["total"] or 0
+        # 買取はお客様への支払い（支出）のため、売上合計には含めない
+        total = dr.exclude(job_type=WorkRecord.JobType.PURCHASE).aggregate(total=Sum("amount"))["total"] or 0
         count_parts = [
             f"{jt}{dr.filter(job_type=jt).count()}件"
             for jt in ["処分", "買取", "見積", "その他"]
@@ -79,8 +80,14 @@ def _build_company_layout(records_qs) -> tuple[list, list, int]:
         }
         for i in range(3)
     ]
-    day_total = records_qs.aggregate(total=Sum("amount"))["total"] or 0
-    return upper_slots, lower_slots, day_total
+    day_total = records_qs.exclude(job_type=WorkRecord.JobType.PURCHASE).aggregate(total=Sum("amount"))["total"] or 0
+    # 買取は合計せず1件ずつ帳票に記載する（「その他」欄の下・処理場欄と同じ流儀）
+    kaitori_amounts = list(
+        records_qs.filter(job_type=WorkRecord.JobType.PURCHASE)
+        .order_by("created_at")
+        .values_list("amount", flat=True)
+    )
+    return upper_slots, lower_slots, day_total, kaitori_amounts
 
 
 # ---------------------------------------------------------------------------
@@ -139,8 +146,8 @@ def record_list(request):
 
 @login_required
 def export_csv(request):
-    """作業記録を CSV でダウンロード（一覧の絞り込み条件を引き継ぐ）。"""
-    records = WorkRecord.objects.all()
+    """作業記録を CSV でダウンロード（一覧の絞り込み条件を引き継ぐ・削除済みは含めない）。"""
+    records = WorkRecord.objects.filter(is_deleted=False)
     if request.GET.get("date"):
         records = records.filter(date=request.GET["date"])
     if request.GET.get("driver_name"):
@@ -250,17 +257,23 @@ def permanent_delete(request, pk: int):
 @login_required
 def company_report(request):
     """業務日報：日付ごとの売上・件数・勤務時間を集計。"""
-    dates = WorkRecord.objects.values_list("date", flat=True).distinct().order_by("-date")
+    dates = WorkRecord.objects.filter(is_deleted=False).values_list("date", flat=True).distinct().order_by("-date")
 
     report_data = []
     for d in dates:
-        records = WorkRecord.objects.filter(date=d)
-        upper_slots, lower_slots, day_total = _build_company_layout(records)
+        records = WorkRecord.objects.filter(date=d, is_deleted=False)
+        upper_slots, lower_slots, day_total, kaitori_amounts = _build_company_layout(records)
+        # 「その他」欄の下：買取（1件ずつ）と経費のその他（内容: 金額）を並べる
+        misc_items = [f"買取: {a}" for a in kaitori_amounts] + [
+            f"{e.site_name}: {e.amount}"
+            for e in Expense.objects.filter(date=d, expense_type=Expense.ExpenseType.OTHER)
+        ]
         report_data.append({
             "date": d,
             "upper_slots": upper_slots,
             "lower_slots": lower_slots,
             "day_total": day_total,
+            "misc_items": misc_items,
             "processing_expenses": Expense.objects.filter(date=d, expense_type="処理場"),
         })
 
@@ -272,6 +285,8 @@ def monthly_chart(request):
     """売上グラフ：月別・日別をタブで切り替え（Chart.js）。"""
     raw_monthly = (
         WorkRecord.objects
+        .filter(is_deleted=False)  # ゴミ箱の記録は集計に含めない
+        .exclude(job_type=WorkRecord.JobType.PURCHASE)  # 買取は支出のため売上グラフから除外
         .annotate(month=TruncMonth("date"))
         .values("month", "driver_name")
         .annotate(total=Sum("amount"))
@@ -325,6 +340,8 @@ def monthly_chart(request):
     if sel:
         raw_daily = (
             WorkRecord.objects
+            .filter(is_deleted=False)  # ゴミ箱の記録は集計に含めない
+            .exclude(job_type=WorkRecord.JobType.PURCHASE)  # 買取は支出のため売上グラフから除外
             .filter(date__year=sel.year, date__month=sel.month)
             .values("date", "driver_name")
             .annotate(total=Sum("amount"))
@@ -389,7 +406,7 @@ def print_today(request):
             target_date = date.today()
 
     drivers_with_records = (
-        WorkRecord.objects.filter(date=target_date)
+        WorkRecord.objects.filter(date=target_date, is_deleted=False)
         .values_list("driver_name", flat=True)
         .distinct()
         .order_by("driver_name")
@@ -397,13 +414,14 @@ def print_today(request):
 
     driver_reports = []
     for name in drivers_with_records:
-        records = WorkRecord.objects.filter(date=target_date, driver_name=name).order_by("created_at")
+        records = WorkRecord.objects.filter(date=target_date, driver_name=name, is_deleted=False).order_by("created_at")
         totals = {}
         for jt in ["処分", "買取", "見積", "その他"]:
             agg = records.filter(job_type=jt).aggregate(cnt=Count("id"), total=Sum("amount"))
             if agg["cnt"]:
                 totals[jt] = {"count": agg["cnt"], "total": agg["total"] or 0}
-        grand_total = records.aggregate(total=Sum("amount"))["total"] or 0
+        # 買取は支出のため売上合計に含めない（種類別の内訳では件数・金額とも表示される）
+        grand_total = records.exclude(job_type=WorkRecord.JobType.PURCHASE).aggregate(total=Sum("amount"))["total"] or 0
         log = DriverDailyLog.objects.filter(driver_name=name, date=target_date).first()
         driver_reports.append({
             "name": name,
@@ -413,8 +431,13 @@ def print_today(request):
             "end_time": log.end_time.strftime("%H:%M") if log else "―",
         })
 
-    records_all = WorkRecord.objects.filter(date=target_date)
-    upper_slots, lower_slots, day_total = _build_company_layout(records_all)
+    records_all = WorkRecord.objects.filter(date=target_date, is_deleted=False)
+    upper_slots, lower_slots, day_total, kaitori_amounts = _build_company_layout(records_all)
+    # 「その他」欄の下：買取（1件ずつ）と経費のその他（内容: 金額）を並べる
+    misc_items = [f"買取: {a}" for a in kaitori_amounts] + [
+        f"{e.site_name}: {e.amount}"
+        for e in Expense.objects.filter(date=target_date, expense_type=Expense.ExpenseType.OTHER)
+    ]
 
     return render(request, "reports/print_today.html", {
         "target_date": target_date,
@@ -422,6 +445,7 @@ def print_today(request):
         "upper_slots": upper_slots,
         "lower_slots": lower_slots,
         "day_total": day_total,
+        "misc_items": misc_items,
         "processing_expenses": Expense.objects.filter(date=target_date, expense_type="処理場"),
     })
 
@@ -510,7 +534,9 @@ def address_suggest(request):
         data = r.json()
         results = []
         seen: set = set()
-        for item in data[:15]:
+        # 「区」を含む住所はAPIの応答順で後方に埋もれることがあるため、
+        # 上位15件だけでなく全件を走査してから候補数を絞る（見落とし防止）。
+        for item in data:
             title = item["properties"]["title"]
             # "福岡県福岡市博多区住吉3丁目" → "博多区"
             # "東京都目黒区大橋二丁目" → "目黒区"
@@ -521,7 +547,7 @@ def address_suggest(request):
             if m and title not in seen:
                 seen.add(title)
                 results.append({"district": m.group(1), "full": title})
-        result = {"results": results[:6]}
+        result = {"results": results[:8]}
         _address_cache[q] = result
         return JsonResponse(result)
     except Exception as e:
@@ -560,7 +586,8 @@ def location_chart(request):
             selected_month_str = ""
 
     district_data: dict = {}
-    for r in records_qs.values("place", "amount"):
+    # 買取は支出のため地域別売上から除外
+    for r in records_qs.exclude(job_type=WorkRecord.JobType.PURCHASE).values("place", "amount"):
         place = (r["place"] or "").strip() or "その他"
         amount = r["amount"]
         if "区" in place:
@@ -604,21 +631,18 @@ def location_chart(request):
 # ---------------------------------------------------------------------------
 
 def register(request):
-    """招待コードを知っている人だけが新規アカウントを作れる登録ページ。"""
-    invite_code = settings.INVITE_CODE
-    error = None
+    """新規アカウント登録ページ。一般ユーザー（ドライバー）のみ作成される。
 
+    管理者権限は Web 経由では発行されない（createsuperuser のみ）。
+    """
     if request.method == "POST":
-        if request.POST.get("invite_code", "").strip() != invite_code:
-            error = "招待コードが正しくありません。"
-        else:
-            form = UserCreationForm(request.POST)
-            if form.is_valid():
-                user = form.save()
-                Driver.objects.get_or_create(name=user.username)
-                logger.info("新規ユーザー登録: %s（Driverも自動作成）", user.username)
-                return redirect("/login/?registered=1")
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            Driver.objects.get_or_create(name=user.username)
+            logger.info("新規ユーザー登録: %s（Driverも自動作成）", user.username)
+            return redirect("/login/?registered=1")
     else:
         form = UserCreationForm()
 
-    return render(request, "registration/register.html", {"form": form, "error": error})
+    return render(request, "registration/register.html", {"form": form})

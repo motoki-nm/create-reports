@@ -96,10 +96,6 @@
   <div class="brand">新規アカウント登録</div>
   <div class="subtitle">日報管理システム</div>
 
-  {% if error %}
-  <div class="error-box">{{ error }}</div>
-  {% endif %}
-
   <form method="POST">
     {% csrf_token %}
 
@@ -123,13 +119,6 @@
     {% if form.password2.errors %}
     <ul class="field-errors">{% for e in form.password2.errors %}<li>{{ e }}</li>{% endfor %}</ul>
     {% endif %}
-
-    <hr class="divider">
-    <div class="invite-label">
-      招待コード <span class="invite-badge">必須</span>
-    </div>
-    <input type="text" id="id_invite_code" name="invite_code" placeholder="責任者から受け取ったコードを入力">
-    <p class="hint">責任者から共有されたコードを入力してください</p>
 
     <button type="submit" class="btn">登録する</button>
   </form>

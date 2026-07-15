@@ -132,7 +132,8 @@
       <td class="s3"></td>
       <td class="s3" colspan="2" rowspan="2" style="white-space:pre-wrap;overflow:visible;vertical-align:top;">{% for e in day.processing_expenses %}{{ e.site_name }}:{{ e.amount|floatformat:0 }}{% if forloop.counter|divisibleby:4 %}
 {% else %} {% endif %}{% endfor %}</td>
-      <td class="s6" colspan="8" rowspan="2"></td>
+      <td class="s6" colspan="8" rowspan="2" style="white-space:pre-wrap;overflow:visible;vertical-align:top;">{% for item in day.misc_items %}{{ item }}{% if forloop.counter|divisibleby:4 %}
+{% else %} {% endif %}{% endfor %}</td>
     </tr>
 
     <!-- 行23: 合計 | ¥ | 金額 | (D〜M は行22から結合) -->

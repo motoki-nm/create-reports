@@ -10,9 +10,22 @@ class WorkRecordForm(forms.ModelForm):
     amount = forms.IntegerField(
         label="金額（円）",
         min_value=0,
-        required=True,
-        widget=forms.NumberInput(attrs={"placeholder": "例：15000", "min": "0"}),
+        required=False,  # 見積・その他は金額未定のため空欄OK（clean で種類別に検証する）
+        widget=forms.NumberInput(attrs={"placeholder": "例：15000（見積・その他は空欄OK）", "min": "0"}),
     )
+
+    # 金額を省略できる仕事種類
+    AMOUNT_OPTIONAL_TYPES = (WorkRecord.JobType.ESTIMATE, WorkRecord.JobType.OTHER)
+
+    def clean(self):
+        """見積・その他のみ金額の省略を許可し、それ以外は必須のまま維持する。"""
+        cleaned = super().clean()
+        if cleaned.get("amount") is None:
+            if cleaned.get("job_type") in self.AMOUNT_OPTIONAL_TYPES:
+                cleaned["amount"] = 0
+            else:
+                self.add_error("amount", "金額を入力してください（見積・その他の場合のみ空欄にできます）")
+        return cleaned
 
     driver_name = forms.ChoiceField(
         choices=[],

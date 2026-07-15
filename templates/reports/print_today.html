@@ -166,7 +166,7 @@
       <div class="summary-item">{{ jt }}：<span>{{ data.count }}件　{{ data.total|floatformat:0 }}円</span></div>
       {% endfor %}
       <div class="summary-item" style="background:#2c3e50;color:#fff;">
-        合計：<span style="color:#fff;">{{ dr.grand_total|floatformat:0 }}円</span>
+        売上合計（買取除く）：<span style="color:#fff;">{{ dr.grand_total|floatformat:0 }}円</span>
       </div>
       <div class="summary-item">業務終了：<span>{{ dr.end_time }}</span></div>
     </div>
@@ -251,7 +251,8 @@
         <td class="s3"></td>
         <td class="s3" colspan="2" rowspan="2" style="white-space:pre-wrap;overflow:visible;vertical-align:top;">{% for e in processing_expenses %}{{ e.site_name }}:{{ e.amount|floatformat:0 }}{% if forloop.counter|divisibleby:4 %}
 {% else %} {% endif %}{% endfor %}</td>
-        <td class="s6" colspan="8" rowspan="2"></td>
+        <td class="s6" colspan="8" rowspan="2" style="white-space:pre-wrap;overflow:visible;vertical-align:top;">{% for item in misc_items %}{{ item }}{% if forloop.counter|divisibleby:4 %}
+{% else %} {% endif %}{% endfor %}</td>
       </tr>
       <tr style="height:43px">
         <td class="s3 la">合計</td>
